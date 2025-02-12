@@ -11,17 +11,18 @@ public class Player : MonoBehaviour
     // Public Value
     [Header("Movement Value")]
     [Tooltip("캐릭터의 최대 속도")]
-    public float MaxSpeed;
+    [SerializeField] float MaxSpeed;
     [Tooltip("캐릭터의 최대 점프 강도")]
-    public float MaxJumpPower;
+    [SerializeField] float MaxJumpPower;
     [Tooltip("캐릭터의 감속 정도")]
-    public float DecreaseSpeed;
+    [SerializeField] float DecreaseSpeed;
 
     // Private Value
-    [SerializeField] Vector2 MovementDirection;
+    Vector2 MovementDirection;
     bool bIsJumping;
     bool bIsFalling;
-
+    bool bIsAttack;
+    
 
     // Functionary
     void Awake()
@@ -47,6 +48,7 @@ public class Player : MonoBehaviour
         MovementDirection = Vector2.zero;
         bIsJumping = false;
         bIsFalling = false;
+        bIsAttack = false;
     }
 
     void Update()
@@ -99,6 +101,16 @@ public class Player : MonoBehaviour
         {
             // 천천히 떨어지는 기능 넣을 것.
             // 중력 값을 바꿔주거나 AddForce를 아래 방향으로 한 후 속도 조절하거나
+        }
+    }
+
+    public void OnAttack()
+    {
+        if (!bIsAttack)
+        {
+            bIsAttack = true;
+            animator.Play("Attack");
+            //animator.SetBool("IsAttacking", bIsAttack);
         }
     }
 
