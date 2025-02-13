@@ -1,5 +1,7 @@
+using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
@@ -7,21 +9,28 @@ public class Player : MonoBehaviour
     Rigidbody2D rigidbody2;
     Animator animator;
     SpriteRenderer spriteRenderer;
+    CapsuleCollider2D capsuleCollider2;
 
-    // Public Value
+    // Modify In Editor Value
     [Header("Movement Value")]
     [Tooltip("캐릭터의 최대 속도")]
     [SerializeField] float MaxSpeed;
     [Tooltip("캐릭터의 최대 점프 강도")]
     [SerializeField] float MaxJumpPower;
-    [Tooltip("캐릭터의 감속 정도")]
-    [SerializeField] float DecreaseSpeed;
+    [SerializeField] Transform ReverseAttackPos;
+    [SerializeField] Transform ForwardAttackPos;
+    [SerializeField] Vector2 BoxSize;
+    [SerializeField] float AttackRange;
+    [SerializeField] float DashDistance;
 
     // Private Value
-    Vector2 MovementDirection;
+    Transform AttackPoint;
+    public Vector2 MovementDirection;
     bool bIsJumping;
     bool bIsFalling;
-    bool bIsAttack;
+    bool bIsDashing;
+
+    [SerializeField] float DashingTime;
     
 
     // Functionary
@@ -36,59 +45,66 @@ public class Player : MonoBehaviour
         rigidbody2 = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        capsuleCollider2 = GetComponent<CapsuleCollider2D>();
 
         rigidbody2.freezeRotation = true;
+        AttackPoint = ForwardAttackPos;
     }
 
     void InitializedMovementData()
     {
         MaxSpeed = 5.0f;
         MaxJumpPower = 5.0f;
-        DecreaseSpeed = 1.0f;
         MovementDirection = Vector2.zero;
         bIsJumping = false;
         bIsFalling = false;
-        bIsAttack = false;
+        bIsDashing = false;
     }
 
     void Update()
     {
+        if (bIsDashing)
+        {
+            return;
+        }
+
         CheckFalling();
         CheckMoving();
-
-        /*if(Input.GetButtonUp("Horizontal"))
-        {
-            rigidbody2.linearVelocity = new Vector2(rigidbody2.linearVelocity.normalized.x * DecreaseSpeed, rigidbody2.linearVelocityY);
-            animator.SetBool("bIsMove", false);
-        }*/
-
-
     }
 
     void FixedUpdate()
     {
         // 이 함수는 유니티에서 사용하는 물리 기반 프레임마다 실행되는 듯.
         // 즉 RigidBody의 속성을 사용할 때에는 여기서 하면 되는 듯.
+        if (bIsDashing)
+        {
+            return;
+        }
 
-        // Movement Logic
         rigidbody2.linearVelocity = new Vector2(MovementDirection.normalized.x * MaxSpeed, rigidbody2.linearVelocityY);
-
-        // Movment Acceleration Logic
-        //rigidbody2.AddForce(MovementDirection.normalized, ForceMode2D.Impulse);
     }
-
+    
     public void OnMove(InputValue inputValue)
     {
         MovementDirection = inputValue.Get<Vector2>();
         if(MovementDirection.x < 0)
         {
             spriteRenderer.flipX = true;
+            AttackPoint = ReverseAttackPos;
+            capsuleCollider2.offset = new Vector2(0.07f, -0.04f);
+            /*Vector3 localScale = transform.localScale;
+            localScale.x *= -1.0f;
+            transform.localScale = localScale;*/
         }
         else if (MovementDirection.x > 0)
         {
             spriteRenderer.flipX = false;
+            AttackPoint = ForwardAttackPos;
+            capsuleCollider2.offset = new Vector2(-0.08f, -0.04f);
+            /*Vector3 localScale = transform.localScale;
+            localScale.x *= 1.0f;
+            transform.localScale = localScale;*/
         }
-        
     }
 
     public void OnJump()
@@ -106,12 +122,47 @@ public class Player : MonoBehaviour
 
     public void OnAttack()
     {
-        if (!bIsAttack)
+        animator.SetTrigger("IsAttacking");
+        Collider2D[] HitArray = Physics2D.OverlapBoxAll(AttackPoint.position, BoxSize, AttackRange);
+
+        foreach (Collider2D HitResult in HitArray)
         {
-            bIsAttack = true;
-            animator.Play("Attack");
-            //animator.SetBool("IsAttacking", bIsAttack);
+            Debug.Log(HitResult.tag);
         }
+    }
+
+    /*private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(AttackPoint.position, BoxSize);
+    }*/
+
+    public void OnDash()
+    {
+        animator.SetTrigger("IsDashing");
+        bIsDashing = true;
+        StartCoroutine(DoDash());
+    }
+
+    private IEnumerator DoDash()
+    {
+        bIsDashing = true;
+        var originalGravity = rigidbody2.gravityScale;
+        rigidbody2.gravityScale = 0f;
+
+        if (MovementDirection.x < 0)
+        {
+            rigidbody2.linearVelocity = new Vector2(transform.localScale.x * -DashDistance, 0);
+        }
+        else if (MovementDirection.x > 0)
+        {
+            rigidbody2.linearVelocity = new Vector2(transform.localScale.x * DashDistance, 0);
+        }
+        
+        yield return new WaitForSeconds(DashingTime);
+
+        rigidbody2.gravityScale = originalGravity;
+        bIsDashing = false;
     }
 
     void CheckMoving()
