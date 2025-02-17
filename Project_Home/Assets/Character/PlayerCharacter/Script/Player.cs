@@ -2,6 +2,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class Player : MonoBehaviour
     Animator animator;
     SpriteRenderer spriteRenderer;
     CapsuleCollider2D capsuleCollider2;
+    //CircleCollider2D circleCollider2;
 
     // Modify In Editor Value
     [Header("Movement Value")]
@@ -22,6 +24,7 @@ public class Player : MonoBehaviour
     [SerializeField] Vector2 BoxSize;
     [SerializeField] float AttackRange;
     [SerializeField] float DashDistance;
+    [SerializeField] float DashingTime;
 
     // Private Value
     Transform AttackPoint;
@@ -29,9 +32,9 @@ public class Player : MonoBehaviour
     bool bIsJumping;
     bool bIsFalling;
     bool bIsDashing;
-
-    [SerializeField] float DashingTime;
-    
+    bool bIsGround;
+    bool bIsEdge;
+    bool bIsInteraction;
 
     // Functionary
     void Awake()
@@ -59,6 +62,9 @@ public class Player : MonoBehaviour
         bIsJumping = false;
         bIsFalling = false;
         bIsDashing = false;
+        bIsGround = false;
+        bIsEdge = false;
+        bIsInteraction = false;
     }
 
     void Update()
@@ -76,47 +82,53 @@ public class Player : MonoBehaviour
     {
         // 이 함수는 유니티에서 사용하는 물리 기반 프레임마다 실행되는 듯.
         // 즉 RigidBody의 속성을 사용할 때에는 여기서 하면 되는 듯.
-        if (bIsDashing)
+        if (bIsDashing || bIsEdge)
         {
             return;
         }
-
         rigidbody2.linearVelocity = new Vector2(MovementDirection.normalized.x * MaxSpeed, rigidbody2.linearVelocityY);
     }
     
     public void OnMove(InputValue inputValue)
     {
+        if (bIsEdge)
+        {
+            return;
+        }
         MovementDirection = inputValue.Get<Vector2>();
         if(MovementDirection.x < 0)
         {
             spriteRenderer.flipX = true;
             AttackPoint = ReverseAttackPos;
             capsuleCollider2.offset = new Vector2(0.07f, -0.04f);
-            /*Vector3 localScale = transform.localScale;
-            localScale.x *= -1.0f;
-            transform.localScale = localScale;*/
         }
         else if (MovementDirection.x > 0)
         {
             spriteRenderer.flipX = false;
             AttackPoint = ForwardAttackPos;
             capsuleCollider2.offset = new Vector2(-0.08f, -0.04f);
-            /*Vector3 localScale = transform.localScale;
-            localScale.x *= 1.0f;
-            transform.localScale = localScale;*/
         }
     }
 
     public void OnJump()
     {
-        if(!bIsJumping && !bIsFalling)
+        if(!bIsJumping && !bIsFalling && !bIsEdge)
         {
+            bIsGround = false;
+            bIsJumping = true;
+            animator.SetBool("IsJumping", bIsJumping);
             rigidbody2.AddForce(Vector2.up * MaxJumpPower, ForceMode2D.Impulse);
         }
         else if (bIsJumping || bIsFalling)
         {
-            // 천천히 떨어지는 기능 넣을 것.
-            // 중력 값을 바꿔주거나 AddForce를 아래 방향으로 한 후 속도 조절하거나
+            DoEdging();
+        }
+        else if (bIsEdge)
+        {
+            rigidbody2.gravityScale = 1.0f;
+            rigidbody2.AddForce(Vector2.up * 5.0f, ForceMode2D.Impulse);
+            bIsEdge = false;
+            animator.SetBool("IsEdging", bIsEdge);
         }
     }
 
@@ -131,17 +143,21 @@ public class Player : MonoBehaviour
         }
     }
 
-    /*private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(AttackPoint.position, BoxSize);
-    }*/
-
     public void OnDash()
     {
         animator.SetTrigger("IsDashing");
         bIsDashing = true;
         StartCoroutine(DoDash());
+    }
+
+    public void OnInteraction()
+    {
+        RaycastHit2D HitRay = Physics2D.Raycast(transform.position, MovementDirection, 2.0f, LayerMask.GetMask("House"));
+
+        if (bIsInteraction && HitRay.collider.tag == "Level1")
+        {
+            SceneManager.LoadScene("Level 1");
+        }
     }
 
     private IEnumerator DoDash()
@@ -177,38 +193,89 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == 7)
+        {
+            bIsInteraction = true;
+            Debug.Log("EnableInteraction");
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == 7)
+        {
+            bIsInteraction = false;
+            Debug.Log("DisableInteraction");
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        bIsGround = collision.gameObject.layer == 6;
+        if (collision.gameObject.layer == 6)
+        {
+            bIsGround = true;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.layer == 6)
+        {
+            bIsGround = false;
+        }
+    }
+
     void CheckFalling()
     {
-        if (rigidbody2.linearVelocity.y < 0)
+        if (rigidbody2.linearVelocityY < 0.0f && !bIsGround)
         {
-            bIsJumping = false;
             bIsFalling = true;
-        }
-        else if (rigidbody2.linearVelocityY == 0)
-        {
             bIsJumping = false;
-            bIsFalling = false;
         }
         else
         {
-            bIsJumping = true;
             bIsFalling = false;
         }
         animator.SetBool("IsFalling", bIsFalling);
         animator.SetBool("IsJumping", bIsJumping);
     }
 
-    void CheckFloor()
+    void DoEdging()
     {
-        RaycastHit2D rayHit2D = Physics2D.Raycast(rigidbody2.position, Vector2.down, 0.25f, LayerMask.GetMask("Platform"));
-        if (rayHit2D.collider)
+        if(MovementDirection.x < 0)
         {
-            animator.SetBool("bIsFalling", false);
-            animator.SetBool("bIsJump", false);
+            RaycastHit2D hit = Physics2D.Raycast(rigidbody2.position, Vector2.left, 0.25f, LayerMask.GetMask("Platform"));
+            Debug.DrawRay(transform.position, Vector3.right, Color.red);
+            if (hit.collider)
+            {
+                rigidbody2.gravityScale = 0.0f;
+                rigidbody2.linearVelocityY = 0.0f;
+                bIsEdge = true;
+                bIsFalling = false;
+                bIsJumping = false;
+                animator.SetBool("IsEdging", bIsEdge);
+                animator.SetBool("IsJumping", bIsJumping);
+                animator.SetBool("IsFalling", bIsFalling);
+            }
         }
-        else
+        if(MovementDirection.x > 0)
         {
-            animator.SetBool("bIsFalling", true);
+            RaycastHit2D hit = Physics2D.Raycast(rigidbody2.position, Vector2.right, 0.25f, LayerMask.GetMask("Platform"));
+            Debug.DrawRay(transform.position, Vector3.right, Color.green);
+            if (hit.collider)
+            {
+                rigidbody2.gravityScale = 0.0f;
+                rigidbody2.linearVelocityY = 0.0f;
+                bIsEdge = true;
+                bIsFalling = false;
+                bIsJumping = false;
+                animator.SetBool("IsEdging", bIsEdge);
+                animator.SetBool("IsJumping", bIsJumping);
+                animator.SetBool("IsFalling", bIsFalling);
+            }
         }
     }
 }
