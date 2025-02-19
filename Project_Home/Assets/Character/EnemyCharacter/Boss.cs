@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public enum CharacterState
+/*public enum CharacterState
 {
     Idle,
     Move,
@@ -10,80 +10,170 @@ public enum CharacterState
     Spell,
     Hit,
     Death
+}*/
+
+public interface IBossState
+{
+    void EnterState(Boss boss);
+    void ExcuteState(Boss boss);
+    void ExitState(Boss boss);
+}
+
+public class IdleState : IBossState
+{
+    public void EnterState(Boss boss)
+    {
+    }
+
+    public void ExcuteState(Boss boss)
+    {
+    }
+
+    public void ExitState(Boss boss)
+    {
+    }
+}
+
+public class AttackState : IBossState
+{
+    private float AttackDelay;
+
+    public void EnterState(Boss boss)
+    {
+        AttackDelay = 0.0f;
+    }
+
+    public void ExcuteState(Boss boss)
+    {
+        AttackDelay -= Time.deltaTime;
+        if (AttackDelay <= 0.0f)
+        {
+            boss.animator.SetTrigger("IsAttacking");
+            AttackDelay = boss.AttackDelay;
+        }
+    }
+
+    public void ExitState(Boss boss)
+    {
+        if(AttackDelay != 0.0f)
+        {
+            AttackDelay = 0.0f;
+        }
+    }
+}
+
+public class CastState : IBossState
+{
+    public void EnterState(Boss boss)
+    {
+
+    }
+
+    public void ExcuteState(Boss boss)
+    {
+    
+    }
+
+    public void ExitState(Boss boss)
+    {
+    
+    }
+}
+
+public class SpellState : IBossState
+{
+    public void EnterState(Boss boss)
+    {
+
+    }
+
+    public void ExcuteState(Boss boss)
+    {
+
+    }
+
+    public void ExitState(Boss boss)
+    {
+
+    }
 }
 
 public class Boss : MonoBehaviour
 {
+    public GameObject SpellObject;
+    public Rigidbody2D TargetCharacterRigidbody;
+    public Animator animator;
+    public float AttackDelay;
+
     Rigidbody2D rigidbody2;
     BoxCollider2D boxCollider2;
-    Animator animator;
-    private CharacterState characterstate;
+
+    private IBossState bossState;
 
     private void Awake()
     {
         rigidbody2 = GetComponent<Rigidbody2D>();
         boxCollider2 = GetComponent<BoxCollider2D>();
         animator = GetComponent<Animator>();
-        characterstate = CharacterState.Idle;
+        bossState = new IdleState();
+        bossState.EnterState(this);
+
+        AttackDelay = 3.0f;
     }
 
     void Start()
     {
-        ModifyingState(characterstate);
+
     }
 
     void Update()
     {
         // 상태별 ChangeState호출
-        DoAttack();
-
-
-
-
-        //UpdateState();
+        AutoTrasitionCheck();
+        bossState.ExcuteState(this);
     }
 
-    void FixedUpdate()
+    void ModifyingState(IBossState NewState)
     {
-        
-    }
-
-    void ModifyingState(CharacterState NewState)
-    {
-        if (characterstate == NewState)
+        if (bossState.ToString() == NewState.ToString())
         {
             return;
         }
-        StopCoroutine(characterstate.ToString());
-        characterstate = NewState;
-        StartCoroutine(characterstate.ToString());
+        bossState.ExitState(this);
+        bossState = NewState;
+        bossState.EnterState(this);
     }
 
-    void DoAttack()
+    void AutoTrasitionCheck()
     {
-        Collider2D HitEnemy = Physics2D.OverlapBox(boxCollider2.bounds.center, boxCollider2.bounds.size, 0.0f);
+        // 공격 범위 내에 있는가
+        Collider2D HitEnemy = Physics2D.OverlapBox(boxCollider2.bounds.center, boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (HitEnemy)
         {
-            Debug.Log("Hit!");
-        }
-        if (HitEnemy.gameObject.tag == "Player")
-        {
-            ModifyingState(CharacterState.Attack);
+            float TargetDistance = Vector3.Distance(TargetCharacterRigidbody.transform.position, rigidbody2.transform.position);
+            if (TargetDistance < 1.5f)
+            {
+                ModifyingState(new AttackState());
+            }
+            else
+            {
+                ModifyingState(new CastState());
+            }
         }
         else
         {
-            ModifyingState(CharacterState.Idle);
+            ModifyingState(new IdleState());
         }
     }
-
+/*
     IEnumerator Idle()
     {
-        Debug.Log("Idle");
+        //Debug.Log("Idle");
 
 
         while (true)
         {
-            Debug.Log("Idle Looping");
+            //Debug.Log("Idle Looping");
             yield return null;
         }
     }
@@ -110,41 +200,13 @@ public class Boss : MonoBehaviour
         }
     }
 
-    void UpdateState()
+    IEnumerator Cast()
     {
-        switch (characterstate)
+        while (true)
         {
-            case CharacterState.Idle:
-                {
-                    
-                }
-                break;
-            case CharacterState.Move:
-                {
-
-                }
-                break;
-            case CharacterState.Attack:
-                {
-
-                }
-                break;
-            case CharacterState.Cast:
-                {
-
-                }
-                break;
-            case CharacterState.Spell:
-                {
-
-                }
-                break;
-            case CharacterState.Hit:
-                {
-
-                }
-                break;
-
+            Debug.Log("Cast");
+            animator.SetBool("IsCasting", true);
+            yield return null;
         }
-    }
+    }*/
 }
