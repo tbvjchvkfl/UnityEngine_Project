@@ -1,16 +1,6 @@
 using UnityEngine;
 using System.Collections;
-
-/*public enum CharacterState
-{
-    Idle,
-    Move,
-    Attack,
-    Cast,
-    Spell,
-    Hit,
-    Death
-}*/
+using Unity.VisualScripting;
 
 public interface IBossState
 {
@@ -23,10 +13,30 @@ public class IdleState : IBossState
 {
     public void EnterState(Boss boss)
     {
+
     }
 
     public void ExcuteState(Boss boss)
     {
+        Collider2D HitEnemy = Physics2D.OverlapBox(boss.boxCollider2.bounds.center, boss.boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            float TargetDistance = Vector3.Distance(boss.TargetRigidbody2.transform.position, boss.rigidbody2.transform.position);
+
+            if (TargetDistance < 1.5f)
+            {
+                boss.ModifyingState(new AttackState());
+            }
+            else
+            {
+                // 여기서 CastState로 들어갈 쿨타임 정해주면 됨.
+                boss.ModifyingState(new CastState());
+            }
+        }
+        else
+        {
+            //boss.ModifyingState(new MoveState());
+        }
     }
 
     public void ExitState(Boss boss)
@@ -36,7 +46,7 @@ public class IdleState : IBossState
 
 public class AttackState : IBossState
 {
-    private float AttackDelay;
+    float AttackDelay;
 
     public void EnterState(Boss boss)
     {
@@ -51,45 +61,88 @@ public class AttackState : IBossState
             boss.animator.SetTrigger("IsAttacking");
             AttackDelay = boss.AttackDelay;
         }
+        else
+        {
+            boss.ModifyingState(new IdleState());
+        }
     }
 
     public void ExitState(Boss boss)
     {
-        if(AttackDelay != 0.0f)
-        {
-            AttackDelay = 0.0f;
-        }
+        AttackDelay = 0.0f;
     }
 }
 
 public class CastState : IBossState
 {
+    private float ActivateDelay;
+    private GameObject SpellObject;
+    Rigidbody2D TargetCharacterRigid;
+
     public void EnterState(Boss boss)
     {
-
+        ActivateDelay = boss.ActivateDelay;
+        TargetCharacterRigid = boss.TargetCharacter.GetComponent<Rigidbody2D>();
+        SpellObject = boss.SpellObject;
+        boss.animator.SetBool("IsCasting", true);
     }
 
     public void ExcuteState(Boss boss)
     {
-    
+        Collider2D HitEnemy = Physics2D.OverlapBox(boss.boxCollider2.bounds.center, boss.boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            ActivateDelay -= Time.deltaTime;
+            if (ActivateDelay <= 0.0f)
+            {
+                ActivateDelay = boss.ActivateDelay;
+                boss.animator.SetTrigger("IsSpelling");
+                GameObject.Instantiate(SpellObject, boss.TargetCharacter.transform.position, boss.transform.rotation);
+                boss.ModifyingState(new IdleState());
+            }
+        }
+        else
+        {
+            boss.ModifyingState(new IdleState());
+        }
     }
 
     public void ExitState(Boss boss)
     {
-    
+        ActivateDelay = boss.ActivateDelay;
+        boss.animator.SetBool("IsCasting", false);
     }
 }
 
 public class SpellState : IBossState
 {
+    
+
     public void EnterState(Boss boss)
     {
-
+        
     }
 
     public void ExcuteState(Boss boss)
     {
+        Collider2D HitEnemy = Physics2D.OverlapBox(boss.boxCollider2.bounds.center, boss.boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            float TargetDistance = Vector3.Distance(boss.TargetRigidbody2.transform.position, boss.rigidbody2.transform.position);
 
+            if (TargetDistance < 1.5f)
+            {
+                boss.ModifyingState(new AttackState());
+            }
+            else
+            {
+                boss.ModifyingState(new CastState());
+            }
+        }
+        else
+        {
+            boss.ModifyingState(new IdleState());
+        }
     }
 
     public void ExitState(Boss boss)
@@ -101,39 +154,51 @@ public class SpellState : IBossState
 public class Boss : MonoBehaviour
 {
     public GameObject SpellObject;
-    public Rigidbody2D TargetCharacterRigidbody;
+    public GameObject TargetCharacter;
+
+
     public Animator animator;
     public float AttackDelay;
+    public float ActivateDelay;
+    public float SpellCountTime;
+    public float SpawnObjectLifeTime;
 
-    Rigidbody2D rigidbody2;
-    BoxCollider2D boxCollider2;
+    public Rigidbody2D rigidbody2;
+    public Rigidbody2D TargetRigidbody2;
+    public BoxCollider2D boxCollider2;
 
-    private IBossState bossState;
+    IBossState bossState;
+    float SpellStartTime;
 
     private void Awake()
     {
         rigidbody2 = GetComponent<Rigidbody2D>();
+        TargetRigidbody2 = TargetCharacter.GetComponent<Rigidbody2D>();
         boxCollider2 = GetComponent<BoxCollider2D>();
         animator = GetComponent<Animator>();
         bossState = new IdleState();
         bossState.EnterState(this);
 
         AttackDelay = 3.0f;
+        ActivateDelay = 8.0f;
+        SpellCountTime = 10.0f;
+        SpawnObjectLifeTime = 1.5f;
+        SpellStartTime = 0.0f;
     }
 
     void Start()
     {
-
+        
     }
 
     void Update()
     {
         // 상태별 ChangeState호출
-        AutoTrasitionCheck();
+        //AutoTrasitionCheck();
         bossState.ExcuteState(this);
     }
 
-    void ModifyingState(IBossState NewState)
+    public void ModifyingState(IBossState NewState)
     {
         if (bossState.ToString() == NewState.ToString())
         {
@@ -150,14 +215,20 @@ public class Boss : MonoBehaviour
         Collider2D HitEnemy = Physics2D.OverlapBox(boxCollider2.bounds.center, boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (HitEnemy)
         {
-            float TargetDistance = Vector3.Distance(TargetCharacterRigidbody.transform.position, rigidbody2.transform.position);
+            float TargetDistance = Vector3.Distance(TargetRigidbody2.transform.position, rigidbody2.transform.position);
+
             if (TargetDistance < 1.5f)
             {
                 ModifyingState(new AttackState());
             }
             else
             {
-                ModifyingState(new CastState());
+                SpellStartTime -= Time.deltaTime;
+                if (SpellStartTime <= 0.0f)
+                {
+                    ModifyingState(new CastState());
+                    SpellStartTime = SpellCountTime;
+                }
             }
         }
         else
