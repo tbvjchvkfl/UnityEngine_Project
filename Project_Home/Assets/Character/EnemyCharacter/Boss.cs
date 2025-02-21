@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using System.Collections;
 using Unity.VisualScripting;
 
@@ -75,15 +76,21 @@ public class AttackState : IBossState
 
 public class CastState : IBossState
 {
-    private float ActivateDelay;
-    private GameObject SpellObject;
-    Rigidbody2D TargetCharacterRigid;
+    float ActivateDelay;
+    GameObject SpellObject;
+    float SpawnPos;
+    float MaxHP;
+    float CurHP;
+    float LightningInterval;
 
     public void EnterState(Boss boss)
     {
         ActivateDelay = boss.ActivateDelay;
-        TargetCharacterRigid = boss.TargetCharacter.GetComponent<Rigidbody2D>();
-        SpellObject = boss.SpellObject;
+        SpawnPos = boss.SpawnPos;
+        MaxHP = boss.MaxHP;
+        CurHP = boss.CurrentHP;
+        LightningInterval = boss.LightningInterval;
+
         boss.animator.SetBool("IsCasting", true);
     }
 
@@ -95,10 +102,35 @@ public class CastState : IBossState
             ActivateDelay -= Time.deltaTime;
             if (ActivateDelay <= 0.0f)
             {
-                ActivateDelay = boss.ActivateDelay;
-                boss.animator.SetTrigger("IsSpelling");
-                GameObject.Instantiate(SpellObject, boss.TargetCharacter.transform.position, boss.transform.rotation);
-                boss.ModifyingState(new IdleState());
+                float CurHealthPer = (CurHP / MaxHP) * 100.0f;
+                if(CurHealthPer >= 70.0f)
+                {
+                    SpellObject = boss.lightningPool.UsingPool();
+                    if (SpellObject)
+                    {
+                        ActivateDelay = boss.ActivateDelay;
+                        boss.animator.SetTrigger("IsSpelling");
+                        SpellObject.transform.position = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
+                        boss.ModifyingState(new IdleState());
+                    }
+                }
+                else if(30.0f < CurHealthPer && CurHealthPer < 70.0f)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        SpellObject = boss.lightningPool.UsingPool();
+                        if (SpellObject)
+                        {
+                            ActivateDelay = boss.ActivateDelay;
+                            boss.animator.SetTrigger("IsSpelling");
+                            SpellObject.transform.position = new Vector3(boss.transform.position.x * LightningInterval * i, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
+                        }
+                    }
+                }
+                else if (CurHealthPer <= 30.0f)
+                {
+
+                }
             }
         }
         else
@@ -114,63 +146,27 @@ public class CastState : IBossState
     }
 }
 
-public class SpellState : IBossState
-{
-    
-
-    public void EnterState(Boss boss)
-    {
-        
-    }
-
-    public void ExcuteState(Boss boss)
-    {
-        Collider2D HitEnemy = Physics2D.OverlapBox(boss.boxCollider2.bounds.center, boss.boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
-        if (HitEnemy)
-        {
-            float TargetDistance = Vector3.Distance(boss.TargetRigidbody2.transform.position, boss.rigidbody2.transform.position);
-
-            if (TargetDistance < 1.5f)
-            {
-                boss.ModifyingState(new AttackState());
-            }
-            else
-            {
-                boss.ModifyingState(new CastState());
-            }
-        }
-        else
-        {
-            boss.ModifyingState(new IdleState());
-        }
-    }
-
-    public void ExitState(Boss boss)
-    {
-
-    }
-}
-
 public class Boss : MonoBehaviour
 {
-    public GameObject SpellObject;
     public GameObject TargetCharacter;
+    public LightningPool lightningPool;
 
-
-    public Animator animator;
     public float AttackDelay;
     public float ActivateDelay;
-    public float SpellCountTime;
-    public float SpawnObjectLifeTime;
+    public float SpawnPos;
+    public float MaxHP;
+    public float CurrentHP;
+    public float LightningInterval;
 
-    public Rigidbody2D rigidbody2;
-    public Rigidbody2D TargetRigidbody2;
-    public BoxCollider2D boxCollider2;
+    [HideInInspector] public Animator animator;
+    [HideInInspector] public Rigidbody2D rigidbody2;
+    [HideInInspector] public Rigidbody2D TargetRigidbody2;
+    [HideInInspector] public BoxCollider2D boxCollider2;
 
     IBossState bossState;
-    float SpellStartTime;
+    
 
-    private void Awake()
+    void Awake()
     {
         rigidbody2 = GetComponent<Rigidbody2D>();
         TargetRigidbody2 = TargetCharacter.GetComponent<Rigidbody2D>();
@@ -180,21 +176,19 @@ public class Boss : MonoBehaviour
         bossState.EnterState(this);
 
         AttackDelay = 3.0f;
-        ActivateDelay = 8.0f;
-        SpellCountTime = 10.0f;
-        SpawnObjectLifeTime = 1.5f;
-        SpellStartTime = 0.0f;
+        ActivateDelay = 5.0f;
+        SpawnPos = 0.4f;
+        MaxHP = 100.0f;
+        CurrentHP = MaxHP;
     }
 
     void Start()
     {
-        
     }
 
     void Update()
     {
         // 상태별 ChangeState호출
-        //AutoTrasitionCheck();
         bossState.ExcuteState(this);
     }
 
@@ -208,76 +202,4 @@ public class Boss : MonoBehaviour
         bossState = NewState;
         bossState.EnterState(this);
     }
-
-    void AutoTrasitionCheck()
-    {
-        // 공격 범위 내에 있는가
-        Collider2D HitEnemy = Physics2D.OverlapBox(boxCollider2.bounds.center, boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
-        if (HitEnemy)
-        {
-            float TargetDistance = Vector3.Distance(TargetRigidbody2.transform.position, rigidbody2.transform.position);
-
-            if (TargetDistance < 1.5f)
-            {
-                ModifyingState(new AttackState());
-            }
-            else
-            {
-                SpellStartTime -= Time.deltaTime;
-                if (SpellStartTime <= 0.0f)
-                {
-                    ModifyingState(new CastState());
-                    SpellStartTime = SpellCountTime;
-                }
-            }
-        }
-        else
-        {
-            ModifyingState(new IdleState());
-        }
-    }
-/*
-    IEnumerator Idle()
-    {
-        //Debug.Log("Idle");
-
-
-        while (true)
-        {
-            //Debug.Log("Idle Looping");
-            yield return null;
-        }
-    }
-
-    IEnumerator Move()
-    {
-
-
-        while (true)
-        {
-            yield return null;
-        }
-    }
-
-    IEnumerator Attack()
-    {
-
-
-        while (true)
-        {
-            Debug.Log("Attack");
-            animator.SetTrigger("IsAttacking");
-            yield return new WaitForSeconds(3.0f);
-        }
-    }
-
-    IEnumerator Cast()
-    {
-        while (true)
-        {
-            Debug.Log("Cast");
-            animator.SetBool("IsCasting", true);
-            yield return null;
-        }
-    }*/
 }
