@@ -7,6 +7,8 @@ public class Lightning : MonoBehaviour
     public GameObject lightningTarget;
     public GameObject TargetCharacter;
 
+    public float knockbackPower;
+
     LightningPool pool;
     BoxCollider2D boxCollider;
     float DeActiveTime;
@@ -40,9 +42,15 @@ public class Lightning : MonoBehaviour
     {
         if (collision.tag == "Player")
         {
-            //Collider2D hit = Physics2D.OverlapBox(boxCollider.bounds.center, boxCollider.bounds.size, 0.0f);
-            TargetCharacter.GetComponent<Player>().TakeDamage(10.0f);
-            Debug.Log("Hit");
+            GameObject OverlapObj = collision.gameObject;
+            if (OverlapObj)
+            {
+                Player player = OverlapObj.GetComponent<Player>();
+                if(player)
+                {
+                    player.TakeDamage(10.0f, knockbackPower);
+                }
+            }
         }
     }
 }

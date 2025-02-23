@@ -12,9 +12,12 @@ public interface IBossState
 
 public class IdleState : IBossState
 {
+    float CastCooldown;
+    float AttackDelay;
     public void EnterState(Boss boss)
     {
-
+        CastCooldown = boss.CastCooldown;
+        AttackDelay = boss.AttackDelay;
     }
 
     public void ExcuteState(Boss boss)
@@ -26,12 +29,19 @@ public class IdleState : IBossState
 
             if (TargetDistance < 1.5f)
             {
-                boss.ModifyingState(new AttackState());
+                AttackDelay -= Time.deltaTime;
+                if (AttackDelay <= 0.0f)
+                {
+                    boss.ModifyingState(new AttackState());
+                }
             }
             else
             {
-                // 여기서 CastState로 들어갈 쿨타임 정해주면 됨.
-                boss.ModifyingState(new CastState());
+                CastCooldown -= Time.deltaTime;
+                if (CastCooldown <= 0.0f)
+                {
+                    boss.ModifyingState(new CastState());
+                }
             }
         }
         else
@@ -42,35 +52,25 @@ public class IdleState : IBossState
 
     public void ExitState(Boss boss)
     {
+        AttackDelay = 0.0f;
+        CastCooldown = 0.0f;
     }
 }
 
 public class AttackState : IBossState
 {
-    float AttackDelay;
-
     public void EnterState(Boss boss)
     {
-        AttackDelay = 0.0f;
     }
 
     public void ExcuteState(Boss boss)
     {
-        AttackDelay -= Time.deltaTime;
-        if (AttackDelay <= 0.0f)
-        {
-            boss.animator.SetTrigger("IsAttacking");
-            AttackDelay = boss.AttackDelay;
-        }
-        else
-        {
-            boss.ModifyingState(new IdleState());
-        }
+        boss.animator.SetTrigger("IsAttacking");
+        boss.ModifyingState(new IdleState());
     }
 
     public void ExitState(Boss boss)
     {
-        AttackDelay = 0.0f;
     }
 }
 
@@ -96,6 +96,17 @@ public class CastState : IBossState
 
     public void ExcuteState(Boss boss)
     {
+        CastingAction(boss);
+    }
+
+    public void ExitState(Boss boss)
+    {
+        ActivateDelay = boss.ActivateDelay;
+        boss.animator.SetBool("IsCasting", false);
+    }
+
+    void CastingAction(Boss boss)
+    {
         Collider2D HitEnemy = Physics2D.OverlapBox(boss.boxCollider2.bounds.center, boss.boxCollider2.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (HitEnemy)
         {
@@ -103,34 +114,7 @@ public class CastState : IBossState
             if (ActivateDelay <= 0.0f)
             {
                 float CurHealthPer = (CurHP / MaxHP) * 100.0f;
-                if(CurHealthPer >= 70.0f)
-                {
-                    SpellObject = boss.lightningPool.UsingPool();
-                    if (SpellObject)
-                    {
-                        ActivateDelay = boss.ActivateDelay;
-                        boss.animator.SetTrigger("IsSpelling");
-                        SpellObject.transform.position = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
-                        boss.ModifyingState(new IdleState());
-                    }
-                }
-                else if(30.0f < CurHealthPer && CurHealthPer < 70.0f)
-                {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        SpellObject = boss.lightningPool.UsingPool();
-                        if (SpellObject)
-                        {
-                            ActivateDelay = boss.ActivateDelay;
-                            boss.animator.SetTrigger("IsSpelling");
-                            SpellObject.transform.position = new Vector3(boss.transform.position.x * LightningInterval * i, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
-                        }
-                    }
-                }
-                else if (CurHealthPer <= 30.0f)
-                {
-
-                }
+                SpellAction(boss, CurHealthPer);
             }
         }
         else
@@ -139,10 +123,36 @@ public class CastState : IBossState
         }
     }
 
-    public void ExitState(Boss boss)
+    void SpellAction(Boss boss, float HP)
     {
-        ActivateDelay = boss.ActivateDelay;
-        boss.animator.SetBool("IsCasting", false);
+        if (HP >= 70.0f)
+        {
+            SpellObject = boss.lightningPool.UsingPool();
+            if (SpellObject)
+            {
+                ActivateDelay = boss.ActivateDelay;
+                boss.animator.SetTrigger("IsSpelling");
+                SpellObject.transform.position = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
+                boss.ModifyingState(new IdleState());
+            }
+        }
+        else if (30.0f < HP && HP < 70.0f)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                SpellObject = boss.lightningPool.UsingPool();
+                if (SpellObject)
+                {
+                    ActivateDelay = boss.ActivateDelay;
+                    boss.animator.SetTrigger("IsSpelling");
+                    SpellObject.transform.position = new Vector3(boss.transform.position.x * LightningInterval * i, boss.TargetCharacter.transform.position.y * SpawnPos, boss.TargetCharacter.transform.position.z);
+                }
+            }
+        }
+        else if (HP <= 30.0f)
+        {
+
+        }
     }
 }
 
@@ -153,6 +163,7 @@ public class Boss : MonoBehaviour
 
     public float AttackDelay;
     public float ActivateDelay;
+    public float CastCooldown;
     public float SpawnPos;
     public float MaxHP;
     public float CurrentHP;
@@ -164,14 +175,19 @@ public class Boss : MonoBehaviour
     [HideInInspector] public BoxCollider2D boxCollider2;
 
     IBossState bossState;
-    
+    SpriteRenderer spriteRenderer;
+    CapsuleCollider2D capsuleCollider2;
+    CapsuleCollider2D TargetCapsule;
 
     void Awake()
     {
         rigidbody2 = GetComponent<Rigidbody2D>();
         TargetRigidbody2 = TargetCharacter.GetComponent<Rigidbody2D>();
+        TargetCapsule = TargetCharacter.GetComponent<CapsuleCollider2D>();
         boxCollider2 = GetComponent<BoxCollider2D>();
         animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        capsuleCollider2 = GetComponent<CapsuleCollider2D>();
         bossState = new IdleState();
         bossState.EnterState(this);
 
@@ -189,6 +205,7 @@ public class Boss : MonoBehaviour
     void Update()
     {
         // 상태별 ChangeState호출
+        CheckTargetPosition();
         bossState.ExcuteState(this);
     }
 
@@ -202,4 +219,46 @@ public class Boss : MonoBehaviour
         bossState = NewState;
         bossState.EnterState(this);
     }
+
+    void CheckTargetPosition()
+    {
+        if (TargetCapsule.transform.position.x > capsuleCollider2.transform.position.x)
+        {
+            spriteRenderer.flipX = true;
+            capsuleCollider2.offset = new Vector2(-0.34f, -0.2f);
+        }
+        else
+        {
+            spriteRenderer.flipX = false;
+            capsuleCollider2.offset = new Vector2(0.34f, -0.2f);
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        if (bossState.ToString() == "IdleState")
+        {
+            CurrentHP -= damage;
+            if (CurrentHP <= 0)
+            {
+                CurrentHP = 0.0f;
+                animator.SetTrigger("IsDeath");
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                animator.SetTrigger("IsHurting");
+                if (!spriteRenderer.flipX)
+                {
+                    rigidbody2.AddForce(Vector2.right * 1001.0f, ForceMode2D.Impulse);
+                }
+                else
+                {
+                    rigidbody2.AddForce(Vector2.left * 1001.0f, ForceMode2D.Impulse);
+                }
+            }
+        }
+    }
+
+
 }
