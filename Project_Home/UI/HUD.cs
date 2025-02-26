@@ -6,25 +6,29 @@ using UnityEngine.UI;
 public class HUD : MonoBehaviour
 {
     [Header("GameObject")]
-    public GameObject playerHPGuageIndex;
     public GameObject Player;
     public GameObject Boss;
+    public GameObject PlayerHealthGuage;
 
     [Header("Script")]
     public HPGuage FirstHealthGuage;
     public HPGuage MiddleHealthGuage;
     public HPGuage LastHealthGuage;
 
-    [Header("UI Position")]
-    public Transform playerHPGuagePos;
-
     [Header("UI Component")]
     public Slider playerHealthController;
     public Slider bossFirstHPController;
     public Slider bossMiddleHPController;
     public Slider bossLastHPController;
-    public HorizontalLayoutGroup playerHealthBar;
 
+    [Header("UI Parameter")]
+    public float PlayerHealthGuageScrollSpeed;
+
+
+    // Player
+    RectTransform PlayerHG;
+
+    // Boss
     bool FirstGuage;
     bool MiddleGuage;
     bool LastGuage;
@@ -33,15 +37,17 @@ public class HUD : MonoBehaviour
 
     void Awake()
     {
+        playerHealthController.maxValue = Player.gameObject.GetComponent<Player>().maxHP / 100.0f;
+        playerHealthController.minValue = 0.0f;
+        playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
+
+        PlayerHG = PlayerHealthGuage.GetComponent<RectTransform>();
+
         Invoke("InitEssentialData", 1.0f);
     }
 
     void InitEssentialData()
     {
-        playerHealthController.maxValue = Player.gameObject.GetComponent<Player>().maxHP / 100.0f;
-        playerHealthController.minValue = 0.0f;
-        playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
-
         bossFirstHPController.maxValue = Boss.gameObject.GetComponent<Boss>().FirstPhaseMaxHP / 100.0f;
         bossMiddleHPController.maxValue = Boss.gameObject.GetComponent<Boss>().MiddlePhaseMaxHP / 100.0f;
         bossLastHPController.maxValue = Boss.gameObject.GetComponent<Boss>().LastPhaseMaxHP / 100.0f;
@@ -55,24 +61,28 @@ public class HUD : MonoBehaviour
 
     void Start()
     {
-        if (playerHPGuageIndex)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                GameObject.Instantiate(playerHPGuageIndex, playerHPGuagePos);
-            }
-            ModifyPlayerImageSize(true);
-        }
-        Invoke(nameof(CallInvo), 1.0f);
+        
     }
 
     void Update()
     {
-        playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
-        FirstGuage = Boss.gameObject.GetComponent<Boss>().bIsFirstPhase;
-        MiddleGuage = Boss.gameObject.GetComponent<Boss>().bIsMiddlePhase;
-        LastGuage = Boss.gameObject.GetComponent<Boss>().bIsLastPhase;
-        ControllBossHealthGuage();
+        if (Player)
+        {
+            playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
+            PlayerHealthGuage.transform.Translate(Vector3.left * Time.deltaTime * PlayerHealthGuageScrollSpeed);
+
+            if (PlayerHG.anchoredPosition.x <= 0.0f)
+            {
+                Debug.Log("Over");
+            }
+        }
+        if (Boss)
+        {
+            FirstGuage = Boss.gameObject.GetComponent<Boss>().bIsFirstPhase;
+            MiddleGuage = Boss.gameObject.GetComponent<Boss>().bIsMiddlePhase;
+            LastGuage = Boss.gameObject.GetComponent<Boss>().bIsLastPhase;
+            ControllBossHealthGuage();
+        }
     }
 
     void ControllBossHealthGuage()
@@ -91,18 +101,5 @@ public class HUD : MonoBehaviour
             bossLastHPController.value = Boss.gameObject.GetComponent<Boss>().CurrentHP / 100.0f;
             MiddleHealthGuage.StopRotation = true;
         }
-    }
-
-    void ModifyPlayerImageSize(bool InModify)
-    {
-        playerHealthBar.childControlWidth = InModify;
-        playerHealthBar.childControlHeight = InModify;
-        playerHealthBar.childForceExpandWidth = InModify;
-        playerHealthBar.childForceExpandHeight = InModify;
-    }
-
-    void CallInvo()
-    {
-        ModifyPlayerImageSize(false);
     }
 }
