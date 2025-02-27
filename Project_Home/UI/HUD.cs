@@ -8,7 +8,8 @@ public class HUD : MonoBehaviour
     [Header("GameObject")]
     public GameObject Player;
     public GameObject Boss;
-    public GameObject PlayerHealthGuage;
+    public GameObject PlayerHealthGuageFirst;
+    public GameObject PlayerHealthGuageSecond;
 
     [Header("Script")]
     public HPGuage FirstHealthGuage;
@@ -26,13 +27,16 @@ public class HUD : MonoBehaviour
 
 
     // Player
-    RectTransform PlayerHG;
+    RectTransform PlayerFHG;
+    RectTransform PlayerSHG;
+
+    bool DoOnceF;
+    bool DoOnceS;
 
     // Boss
     bool FirstGuage;
     bool MiddleGuage;
     bool LastGuage;
-
 
 
     void Awake()
@@ -41,7 +45,10 @@ public class HUD : MonoBehaviour
         playerHealthController.minValue = 0.0f;
         playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
 
-        PlayerHG = PlayerHealthGuage.GetComponent<RectTransform>();
+        PlayerFHG = PlayerHealthGuageFirst.GetComponent<RectTransform>();
+        PlayerSHG = PlayerHealthGuageSecond.GetComponent<RectTransform>();
+        DoOnceF = true;
+        DoOnceS = true;
 
         Invoke("InitEssentialData", 1.0f);
     }
@@ -69,12 +76,9 @@ public class HUD : MonoBehaviour
         if (Player)
         {
             playerHealthController.value = Player.gameObject.GetComponent<Player>().curHP / 100.0f;
-            PlayerHealthGuage.transform.Translate(Vector3.left * Time.deltaTime * PlayerHealthGuageScrollSpeed);
-
-            if (PlayerHG.anchoredPosition.x <= 0.0f)
-            {
-                Debug.Log("Over");
-            }
+            PlayerFHG.transform.Translate(Vector3.left * Time.deltaTime * PlayerHealthGuageScrollSpeed);
+            PlayerSHG.transform.Translate(Vector3.left * Time.deltaTime * PlayerHealthGuageScrollSpeed);
+            ResetHGPosition();
         }
         if (Boss)
         {
@@ -82,6 +86,28 @@ public class HUD : MonoBehaviour
             MiddleGuage = Boss.gameObject.GetComponent<Boss>().bIsMiddlePhase;
             LastGuage = Boss.gameObject.GetComponent<Boss>().bIsLastPhase;
             ControllBossHealthGuage();
+        }
+    }
+
+    void ResetHGPosition()
+    {
+        if (DoOnceF)
+        {
+            if (PlayerSHG.anchoredPosition.x <= 0.0f)
+            {
+                PlayerFHG.anchoredPosition = new Vector2(370.0f, 0.0f);
+                DoOnceF = false;
+                DoOnceS = true;
+            }
+        }
+        if (DoOnceS)
+        {
+            if (PlayerFHG.anchoredPosition.x <= 0.0f)
+            {
+                PlayerSHG.anchoredPosition = new Vector2(370.0f, 0.0f);
+                DoOnceF = true;
+                DoOnceS = false;
+            }
         }
     }
 
