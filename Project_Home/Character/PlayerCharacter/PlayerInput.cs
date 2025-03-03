@@ -12,15 +12,19 @@ public class PlayerInput : MonoBehaviour
     [Header("Component")]
     public BoxCollider2D AttackForward;
     public BoxCollider2D AttackBackward;
-
+    public Camera ViewCamera;
 
     [Header("Player MovmentData")]
     public float MaxSpeed;
     public float MaxJumpPower;
     public float DashPower;
-    public float AttackDamage;
-    public float MaxHP;
-    public float CurrentHP;
+
+
+    [Header("Component Control Value")]
+    public float MaxCameraSize;
+    public float MinCameraSize;
+    public float CameraZoomSpeed;
+    public float CameraInterpSpeed;
 
     [Header("Animation Data")]
     public AnimationClip RollingAnimation;
@@ -47,10 +51,12 @@ public class PlayerInput : MonoBehaviour
     bool bIsFalling;
     bool bIsInAir;
     bool bIsRolling;
-    bool bIsGround;
+    bool IsView;
     bool bIsInteraction;
     bool bIsHit;
     bool bIsDeath;
+    
+
 
     private void Awake()
     {
@@ -67,8 +73,10 @@ public class PlayerInput : MonoBehaviour
         CheckGroundMoving();
         CheckInAir();
         CheckWall();
-    }
+        CameraInteraction();
 
+    }
+    
     private void FixedUpdate()
     {
         if (bIsRolling)
@@ -86,7 +94,6 @@ public class PlayerInput : MonoBehaviour
         }
 
         MovementDirection = inputValue.Get<Vector2>();
-        
         if (MovementDirection.x < 0)
         {
             CharacterSprite.flipX = true;
@@ -116,6 +123,18 @@ public class PlayerInput : MonoBehaviour
             return;
         }
         StartCoroutine(DoDash());
+    }
+
+    public void OnView(InputValue inputValue)
+    {
+        if (inputValue.isPressed)
+        {
+            IsView = true;
+        }
+        if (!inputValue.isPressed)
+        {
+            IsView = false;
+        }
     }
 
     IEnumerator DoDash()
@@ -161,7 +180,6 @@ public class PlayerInput : MonoBehaviour
             if (bIsFalling)
             {
                 bIsFalling = false;
-                bIsGround = true;
                 AnimationController.SetTrigger("Landing");
             }
         }
@@ -186,6 +204,31 @@ public class PlayerInput : MonoBehaviour
             {
                 Debug.Log("Push & Pull");
             }
+        }
+    }
+
+    void CameraInteraction()
+    {
+        if (IsView)
+        {
+            if (MovementDirection.y > 0)
+            {
+                ViewCamera.orthographicSize += Time.deltaTime * CameraZoomSpeed;
+                ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
+            }
+            if (MovementDirection.y < 0)
+            {
+                ViewCamera.orthographicSize -= Time.deltaTime * CameraZoomSpeed;
+                ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
+            }
+            if (MovementDirection.y == 0)
+            {
+                ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
+            }
+        }
+        else
+        {
+            ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
         }
     }
 }
