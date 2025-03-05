@@ -13,6 +13,7 @@ public class PlayerInput : MonoBehaviour
     public BoxCollider2D AttackForward;
     public BoxCollider2D AttackBackward;
     public Camera ViewCamera;
+    public BoxCollider2D CheckingFloor;
 
     [Header("Player MovmentData")]
     public float MaxSpeed;
@@ -173,8 +174,27 @@ public class PlayerInput : MonoBehaviour
 
     void CheckInAir()
     {
-        RaycastHit2D RayTrace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.down, CharacterCapsule.bounds.size.y / 2, LayerMask.GetMask("Ground"));
+        /*RaycastHit2D RayTrace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.down, CharacterCapsule.bounds.size.y / 2, LayerMask.GetMask("Ground"));
         if (RayTrace)
+        {
+            bIsInAir = false;
+            if (bIsFalling)
+            {
+                bIsFalling = false;
+                AnimationController.SetTrigger("Landing");
+            }
+        }
+        else
+        {
+            bIsInAir = true;
+            if (CharacterBody.linearVelocityY < 0.0f)
+            {
+                bIsFalling = true;
+            }
+        }
+        AnimationController.SetBool("Falling", bIsFalling);*/
+        Collider2D CheckBox = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Ground"));
+        if (CheckBox)
         {
             bIsInAir = false;
             if (bIsFalling)
