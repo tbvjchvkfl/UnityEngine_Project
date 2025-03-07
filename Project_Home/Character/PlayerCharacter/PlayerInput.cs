@@ -18,6 +18,7 @@ public class PlayerInput : MonoBehaviour
     [Header("Player MovmentData")]
     public float MaxSpeed;
     public float MaxJumpPower;
+    public float PowerJumpValue;
     public float DashPower;
 
 
@@ -52,12 +53,10 @@ public class PlayerInput : MonoBehaviour
     bool bIsFalling;
     bool bIsInAir;
     bool bIsRolling;
+    bool bIsPowerJump;
     bool IsView;
+    bool IsReadytoPowerJump;
     bool bIsInteraction;
-    bool bIsHit;
-    bool bIsDeath;
-    
-
 
     private void Awake()
     {
@@ -75,21 +74,20 @@ public class PlayerInput : MonoBehaviour
         CheckInAir();
         CheckWall();
         CameraInteraction();
-
     }
     
     private void FixedUpdate()
     {
-        if (bIsRolling)
+        if (bIsRolling || bIsPowerJump)
         {
             return;
         }
-        CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed, CharacterBody.linearVelocityY);
+        CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed, CharacterBody.linearVelocity.y);
     }
 
     public void OnMove(InputValue inputValue)
     {
-        if (bIsRolling)
+        if (bIsRolling || bIsPowerJump)
         {
             return;
         }
@@ -113,8 +111,25 @@ public class PlayerInput : MonoBehaviour
         {
             return;
         }
-        CharacterBody.AddForce(Vector2.up * MaxJumpPower, ForceMode2D.Impulse);
+        if (IsReadytoPowerJump)
+        {
+            StartCoroutine(DoPowerJump());
+            return;
+        }
+        float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
+        CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
         AnimationController.SetTrigger("Jumping");
+    }
+
+    IEnumerator DoPowerJump()
+    {
+        bIsPowerJump = true;
+        yield return new WaitForSeconds(0.5f);
+        CharacterBody.AddForce(Vector2.up * PowerJumpValue, ForceMode2D.Impulse);
+
+        yield return new WaitForSeconds(3.0f);
+        bIsPowerJump = false;
+        Debug.Log("Power");
     }
 
     public void OnDash()
@@ -174,8 +189,9 @@ public class PlayerInput : MonoBehaviour
 
     void CheckInAir()
     {
-        /*RaycastHit2D RayTrace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.down, CharacterCapsule.bounds.size.y / 2, LayerMask.GetMask("Ground"));
-        if (RayTrace)
+        Collider2D CheckGround = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Ground"));
+        Collider2D CheckPlatform = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Jump Platform"));
+        if (CheckGround || CheckPlatform)
         {
             bIsInAir = false;
             if (bIsFalling)
@@ -183,29 +199,15 @@ public class PlayerInput : MonoBehaviour
                 bIsFalling = false;
                 AnimationController.SetTrigger("Landing");
             }
-        }
-        else
-        {
-            bIsInAir = true;
-            if (CharacterBody.linearVelocityY < 0.0f)
+            if (CheckPlatform)
             {
-                bIsFalling = true;
-            }
-        }
-        AnimationController.SetBool("Falling", bIsFalling);*/
-        Collider2D CheckBox = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Ground"));
-        if (CheckBox)
-        {
-            bIsInAir = false;
-            if (bIsFalling)
-            {
-                bIsFalling = false;
-                AnimationController.SetTrigger("Landing");
+                IsReadytoPowerJump = true;
             }
         }
         else
         {
             bIsInAir = true;
+            IsReadytoPowerJump = false;
             if (CharacterBody.linearVelocityY < 0.0f)
             {
                 bIsFalling = true;
