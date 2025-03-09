@@ -72,6 +72,7 @@ public class PlayerInput : MonoBehaviour
     {
         CheckGroundMoving();
         CheckInAir();
+        //SetGravityScale();
         CheckWall();
         CameraInteraction();
     }
@@ -116,6 +117,7 @@ public class PlayerInput : MonoBehaviour
             StartCoroutine(DoPowerJump());
             return;
         }
+        //CharacterBody.gravityScale = 1.0f;
         float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
         CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
         AnimationController.SetTrigger("Jumping");
@@ -124,12 +126,17 @@ public class PlayerInput : MonoBehaviour
     IEnumerator DoPowerJump()
     {
         bIsPowerJump = true;
-        yield return new WaitForSeconds(0.5f);
-        CharacterBody.AddForce(Vector2.up * PowerJumpValue, ForceMode2D.Impulse);
+        AnimationController.SetBool("ReadyPowerJump", true);
 
-        yield return new WaitForSeconds(3.0f);
+        yield return new WaitForSeconds(0.5f);
+
+        CharacterBody.AddForce(Vector2.up * PowerJumpValue, ForceMode2D.Impulse);
+        AnimationController.SetBool("ReadyPowerJump", false);
+        AnimationController.SetTrigger("PowerJump");
+
+        yield return new WaitForSeconds(1.5f);
+
         bIsPowerJump = false;
-        Debug.Log("Power");
     }
 
     public void OnDash()
@@ -158,6 +165,7 @@ public class PlayerInput : MonoBehaviour
         AnimationController.SetTrigger("Rolling");
         CharacterBody.linearVelocity = Vector2.zero;
         bIsRolling = true;
+        float OriginGravityScale = CharacterBody.gravityScale;
         CharacterBody.gravityScale = 0.0f;
 
         if (CharacterSprite.flipX)
@@ -172,7 +180,7 @@ public class PlayerInput : MonoBehaviour
         yield return new WaitForSeconds(RollingAnimation.length - 0.09f);
 
         bIsRolling = false;
-        CharacterBody.gravityScale = 1.0f;
+        CharacterBody.gravityScale = OriginGravityScale;
     }
 
     void CheckGroundMoving()
@@ -251,6 +259,18 @@ public class PlayerInput : MonoBehaviour
         else
         {
             ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
+        }
+    }
+
+    void SetGravityScale()
+    {
+        if (bIsInAir)
+        {
+            CharacterBody.gravityScale = 1.0f;
+        }
+        else
+        {
+            CharacterBody.gravityScale = 3.0f;
         }
     }
 }
