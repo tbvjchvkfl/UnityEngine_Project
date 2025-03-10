@@ -14,6 +14,7 @@ public class PlayerInput : MonoBehaviour
     public BoxCollider2D AttackBackward;
     public Camera ViewCamera;
     public BoxCollider2D CheckingFloor;
+    
 
     [Header("Player MovmentData")]
     public float MaxSpeed;
@@ -57,6 +58,7 @@ public class PlayerInput : MonoBehaviour
     bool IsView;
     bool IsReadytoPowerJump;
     bool bIsInteraction;
+    bool bIsSliding;
 
     private void Awake()
     {
@@ -72,14 +74,14 @@ public class PlayerInput : MonoBehaviour
     {
         CheckGroundMoving();
         CheckInAir();
-        //SetGravityScale();
         CheckWall();
+        CheckSliding();
         CameraInteraction();
     }
     
     private void FixedUpdate()
     {
-        if (bIsRolling || bIsPowerJump)
+        if (bIsRolling || bIsPowerJump || bIsSliding)
         {
             return;
         }
@@ -88,7 +90,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnMove(InputValue inputValue)
     {
-        if (bIsRolling || bIsPowerJump)
+        if (bIsRolling || bIsPowerJump || bIsSliding)
         {
             return;
         }
@@ -108,7 +110,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnJump()
     {
-        if (bIsInAir)
+        if (bIsInAir || bIsSliding)
         {
             return;
         }
@@ -123,25 +125,9 @@ public class PlayerInput : MonoBehaviour
         AnimationController.SetTrigger("Jumping");
     }
 
-    IEnumerator DoPowerJump()
-    {
-        bIsPowerJump = true;
-        AnimationController.SetBool("ReadyPowerJump", true);
-
-        yield return new WaitForSeconds(0.5f);
-
-        CharacterBody.AddForce(Vector2.up * PowerJumpValue, ForceMode2D.Impulse);
-        AnimationController.SetBool("ReadyPowerJump", false);
-        AnimationController.SetTrigger("PowerJump");
-
-        yield return new WaitForSeconds(1.5f);
-
-        bIsPowerJump = false;
-    }
-
     public void OnDash()
     {
-        if (bIsInAir)
+        if (bIsInAir || bIsSliding)
         {
             return;
         }
@@ -157,6 +143,26 @@ public class PlayerInput : MonoBehaviour
         if (!inputValue.isPressed)
         {
             IsView = false;
+        }
+    }
+
+    public void OnInteraction()
+    {
+        if (bIsInteraction)
+        {
+            bIsInteraction = false;
+            AnimationController.SetBool("Interaction", bIsInteraction);
+        }
+        else
+        {
+            RaycastHit2D Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.right, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
+            if (Trace)
+            {
+                bIsInteraction = true;
+                AnimationController.SetBool("Interaction", bIsInteraction);
+                Trace.collider.gameObject.GetComponent<PlatformControl>().bIsInteracting = true;
+                Debug.Log("Interaction");
+            }
         }
     }
 
@@ -183,6 +189,23 @@ public class PlayerInput : MonoBehaviour
         CharacterBody.gravityScale = OriginGravityScale;
     }
 
+    IEnumerator DoPowerJump()
+    {
+        CharacterBody.linearVelocity = Vector2.zero;
+        bIsPowerJump = true;
+        AnimationController.SetBool("ReadyPowerJump", true);
+
+        yield return new WaitForSeconds(0.5f);
+
+        CharacterBody.AddForce(Vector2.up * PowerJumpValue, ForceMode2D.Impulse);
+        AnimationController.SetBool("ReadyPowerJump", false);
+        AnimationController.SetTrigger("PowerJump");
+
+        yield return new WaitForSeconds(1.5f);
+
+        bIsPowerJump = false;
+    }
+
     void CheckGroundMoving()
     {
         if (MovementDirection.x != 0.0f)
@@ -199,7 +222,7 @@ public class PlayerInput : MonoBehaviour
     {
         Collider2D CheckGround = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Ground"));
         Collider2D CheckPlatform = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("Jump Platform"));
-        if (CheckGround || CheckPlatform)
+        if (CheckGround || CheckPlatform || bIsSliding)
         {
             bIsInAir = false;
             if (bIsFalling)
@@ -262,15 +285,34 @@ public class PlayerInput : MonoBehaviour
         }
     }
 
-    void SetGravityScale()
+    void CheckSliding()
     {
-        if (bIsInAir)
+        Collider2D CheckPlatform = Physics2D.OverlapBox(CheckingFloor.bounds.center, CheckingFloor.bounds.size, 0.0f, LayerMask.GetMask("RunWay"));
+        if (CheckPlatform)
         {
-            CharacterBody.gravityScale = 1.0f;
+            bIsSliding = true;
+            MovementDirection = Vector2.zero;
+            float TargetRotValue = CheckPlatform.gameObject.GetComponent<Transform>().eulerAngles.z;
+            transform.rotation = Quaternion.Euler(0.0f, 0.0f, TargetRotValue);
+            if (TargetRotValue <= 180.0f)
+            {
+                CharacterSprite.flipX = true;
+            }
+            else
+            {
+                CharacterSprite.flipX = false;
+            }
         }
         else
         {
-            CharacterBody.gravityScale = 3.0f;
+            bIsSliding = false;
+            transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         }
+        AnimationController.SetBool("Sliding", bIsSliding);
+    }
+
+    public CapsuleCollider2D GetCharacterCapsule()
+    {
+        return CharacterCapsule;
     }
 }
