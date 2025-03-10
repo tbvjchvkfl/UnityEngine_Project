@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class HeartObject : MonoBehaviour
 {
-    public CircleCollider2D ObjCollision;
+    [Header("Essential Data")]
+    public float RotationSpeed;
+
 
     void Awake()
     {
@@ -16,15 +18,19 @@ public class HeartObject : MonoBehaviour
 
     void Update()
     {
-        
+        transform.Rotate(new Vector3(0.0f, 0.0f, RotationSpeed* Time.deltaTime));
+        if (transform.rotation.z >= 360.0f)
+        {
+            transform.rotation = Quaternion.identity;
+        }
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log(collision.gameObject.name);
-        if (collision.gameObject.layer == LayerMask.GetMask("Player"))
+        if (collision.gameObject.layer == 3)
         {
-            Debug.Log("Player");
+            collision.gameObject.GetComponent<PlayerInfo>().CurrentStageCount++;
+            Destroy(gameObject);
         }
     }
 }
