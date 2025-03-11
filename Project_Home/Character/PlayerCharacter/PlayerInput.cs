@@ -14,10 +14,10 @@ public class PlayerInput : MonoBehaviour
     public BoxCollider2D AttackBackward;
     public Camera ViewCamera;
     public BoxCollider2D CheckingFloor;
-    
 
     [Header("Player MovmentData")]
     public float MaxSpeed;
+    public float InteractMoveSpeed;
     public float MaxJumpPower;
     public float PowerJumpValue;
     public float DashPower;
@@ -28,6 +28,7 @@ public class PlayerInput : MonoBehaviour
     public float MinCameraSize;
     public float CameraZoomSpeed;
     public float CameraInterpSpeed;
+
 
     [Header("Animation Data")]
     public AnimationClip RollingAnimation;
@@ -45,7 +46,8 @@ public class PlayerInput : MonoBehaviour
     CapsuleCollider2D CharacterCapsule;
     Animator AnimationController;
     BoxCollider2D AttackPoint;
-    
+    GameObject InteractionObj;
+
     // Movement Data
     Vector2 MovementDirection;
     float CurrentSpeed;
@@ -59,33 +61,16 @@ public class PlayerInput : MonoBehaviour
     bool IsReadytoPowerJump;
     bool bIsInteraction;
     bool bIsSliding;
+    bool bIsInteratingMoving;
 
-    private void Awake()
+    public CapsuleCollider2D GetCharacterCapsule()
     {
-        CharacterBody = GetComponent<Rigidbody2D>();
-        CharacterSprite = GetComponent<SpriteRenderer>();
-        CharacterCapsule = GetComponent<CapsuleCollider2D>();
-        AnimationController = GetComponent<Animator>();
-
-        CurrentSpeed = MaxSpeed;
+        return CharacterCapsule;
     }
 
-    void Update()
+    public bool SetInteractingMoving(bool Value)
     {
-        CheckGroundMoving();
-        CheckInAir();
-        CheckWall();
-        CheckSliding();
-        CameraInteraction();
-    }
-    
-    private void FixedUpdate()
-    {
-        if (bIsRolling || bIsPowerJump || bIsSliding)
-        {
-            return;
-        }
-        CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed, CharacterBody.linearVelocity.y);
+        return bIsInteratingMoving = Value;
     }
 
     public void OnMove(InputValue inputValue)
@@ -96,15 +81,57 @@ public class PlayerInput : MonoBehaviour
         }
 
         MovementDirection = inputValue.Get<Vector2>();
-        if (MovementDirection.x < 0)
+        if (!bIsInteraction)
         {
-            CharacterSprite.flipX = true;
-            AttackPoint = AttackBackward;
+            if (MovementDirection.x < 0)
+            {
+                CharacterSprite.flipX = true;
+                AttackPoint = AttackBackward;
+            }
+            else if (MovementDirection.x > 0)
+            {
+                CharacterSprite.flipX = false;
+                AttackPoint = AttackForward;
+            }
         }
-        else if (MovementDirection.x > 0)
+        else
         {
-            CharacterSprite.flipX = false;
-            AttackPoint = AttackForward;
+            if (!CharacterSprite.flipX)
+            {
+                if (MovementDirection.x < 0)
+                {
+                    AnimationController.SetBool("Pulling", true);
+                    AnimationController.SetBool("Pushing", false);
+                }
+                else if (MovementDirection.x > 0)
+                {
+                    AnimationController.SetBool("Pulling", false);
+                    AnimationController.SetBool("Pushing", true);
+                }
+                else
+                {
+                    AnimationController.SetBool("Pulling", false);
+                    AnimationController.SetBool("Pushing", false);
+                }
+            }
+            else
+            {
+                if (MovementDirection.x < 0)
+                {
+                    AnimationController.SetBool("Pulling", false);
+                    AnimationController.SetBool("Pushing", true);
+                }
+                else if (MovementDirection.x > 0)
+                {
+                    AnimationController.SetBool("Pulling", true);
+                    AnimationController.SetBool("Pushing", false);
+                }
+                else
+                {
+                    AnimationController.SetBool("Pulling", false);
+                    AnimationController.SetBool("Pushing", false);
+                }
+            }
         }
     }
 
@@ -119,7 +146,10 @@ public class PlayerInput : MonoBehaviour
             StartCoroutine(DoPowerJump());
             return;
         }
-        //CharacterBody.gravityScale = 1.0f;
+        if (bIsInteraction)
+        {
+            bIsInteraction = false;
+        }
         float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
         CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
         AnimationController.SetTrigger("Jumping");
@@ -130,6 +160,10 @@ public class PlayerInput : MonoBehaviour
         if (bIsInAir || bIsSliding)
         {
             return;
+        }
+        if (bIsInteraction)
+        {
+            bIsInteraction = false;
         }
         StartCoroutine(DoDash());
     }
@@ -152,18 +186,60 @@ public class PlayerInput : MonoBehaviour
         {
             bIsInteraction = false;
             AnimationController.SetBool("Interaction", bIsInteraction);
+            InteractionObj.GetComponent<PlatformControl>().bIsInteracting = false;
+            InteractionObj = null;
+            SetInteractingMoving(false);
         }
         else
         {
-            RaycastHit2D Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.right, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
-            if (Trace)
+            RaycastHit2D R_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.right, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
+            RaycastHit2D L_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.left, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
+            if (R_Trace)
             {
                 bIsInteraction = true;
                 AnimationController.SetBool("Interaction", bIsInteraction);
-                Trace.collider.gameObject.GetComponent<PlatformControl>().bIsInteracting = true;
-                Debug.Log("Interaction");
+                InteractionObj = R_Trace.collider.gameObject;
+                InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                SetInteractingMoving(true);
+            }
+            if (L_Trace)
+            {
+                bIsInteraction = true;
+                AnimationController.SetBool("Interaction", bIsInteraction);
+                InteractionObj = L_Trace.collider.gameObject;
+                InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                SetInteractingMoving(true);
             }
         }
+    }
+
+    void Awake()
+    {
+        CharacterBody = GetComponent<Rigidbody2D>();
+        CharacterSprite = GetComponent<SpriteRenderer>();
+        CharacterCapsule = GetComponent<CapsuleCollider2D>();
+        AnimationController = GetComponent<Animator>();
+
+        CurrentSpeed = MaxSpeed;
+    }
+
+    void Update()
+    {
+        CheckGroundMoving();
+        CheckInAir();
+        CheckWall();
+        CheckSliding();
+        CameraInteraction();
+    }
+
+    void FixedUpdate()
+    {
+        if (bIsRolling || bIsPowerJump || bIsSliding)
+        {
+            return;
+        }
+        ModifyMoveSpeedbyInteraction();
+        CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed, CharacterBody.linearVelocity.y);
     }
 
     IEnumerator DoDash()
@@ -228,7 +304,6 @@ public class PlayerInput : MonoBehaviour
             if (bIsFalling)
             {
                 bIsFalling = false;
-                AnimationController.SetTrigger("Landing");
             }
             if (CheckPlatform)
             {
@@ -244,6 +319,7 @@ public class PlayerInput : MonoBehaviour
                 bIsFalling = true;
             }
         }
+        AnimationController.SetBool("Landing", !bIsInAir);
         AnimationController.SetBool("Falling", bIsFalling);
     }
 
@@ -311,8 +387,22 @@ public class PlayerInput : MonoBehaviour
         AnimationController.SetBool("Sliding", bIsSliding);
     }
 
-    public CapsuleCollider2D GetCharacterCapsule()
+    void ModifyMoveSpeedbyInteraction()
     {
-        return CharacterCapsule;
+        if (bIsInteraction)
+        {
+            if (InteractionObj && InteractionObj.GetComponent<PlatformControl>().GetPullMax() && MovementDirection == Vector2.left)
+            {
+                CurrentSpeed = 0.0f;
+            }
+            else
+            {
+                CurrentSpeed = InteractMoveSpeed;
+            }
+        }
+        else
+        {
+            CurrentSpeed = MaxSpeed;
+        }
     }
 }
