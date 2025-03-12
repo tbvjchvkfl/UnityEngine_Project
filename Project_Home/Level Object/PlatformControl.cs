@@ -35,7 +35,7 @@ public class PlatformControl : MonoBehaviour
     PlayerInput TargetCharacterInput;
     bool bIsRotationStart;
     bool PullMax;
-    
+    float PreviousPos;
 
     void Awake()
     {
@@ -49,6 +49,7 @@ public class PlatformControl : MonoBehaviour
             TargetCharacterInput = TargetCharacter.GetComponent<PlayerInput>();
         }
         InitPos = transform.position;
+        PreviousPos = Mathf.Clamp(Mathf.Abs(InitPos.x), 0.0f, 1.0f);
     }
 
     void Update()
@@ -98,11 +99,11 @@ public class PlatformControl : MonoBehaviour
 
     void MovePullTrigger()
     {
-        CaculatePercent();
+        
         if (bIsInteracting)
         {
             transform.position = new Vector3(TargetCharacterTransform.position.x + ObjectLoc, transform.position.y, transform.position.z);
-
+            CaculatePercent();
             if (transform.position.x <= 0.2f)
             {
                 transform.position = new Vector3(0.2f, transform.position.y, transform.position.z);
@@ -116,12 +117,35 @@ public class PlatformControl : MonoBehaviour
         else
         {
             transform.position = Vector3.Lerp(transform.position, InitPos, ReturnSpeed * Time.deltaTime);
+            CaculatePercent();
         }
     }
 
     void CaculatePercent()
     {
-        float MaxValue = Mathf.Abs(transform.position.x * 100.0f);
-        Debug.Log(MaxValue);
+        float ClampingCurrentPos = Mathf.Clamp(Mathf.Abs(transform.position.x), 0.0f, 1.0f);
+        if (ClampingCurrentPos < PreviousPos)
+        {
+            for (int i = 0; i < TargetObjs.Count; i++)
+            {
+                TargetObjs[i].GetComponent<SpriteRenderer>().color += new Color(0.02f, 0.02f, 0.02f, 1.0f);
+                if (TargetObjs[i].GetComponent<SpriteRenderer>().color.r >= 1.0f)
+                {
+                    TargetObjs[i].GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+                }
+            }
+        }
+        else if (ClampingCurrentPos > PreviousPos)
+        {
+            for (int i = 0; i < TargetObjs.Count; i++)
+            {
+                TargetObjs[i].GetComponent<SpriteRenderer>().color -= new Color(0.02f, 0.02f, 0.02f, 0.0f);
+                if (TargetObjs[i].GetComponent<SpriteRenderer>().color.r <= 0.6f)
+                {
+                    TargetObjs[i].GetComponent<SpriteRenderer>().color = new Color(0.6f, 0.6f, 0.6f, 1.0f);
+                }
+            }
+        }
+        PreviousPos = ClampingCurrentPos;
     }
 }
