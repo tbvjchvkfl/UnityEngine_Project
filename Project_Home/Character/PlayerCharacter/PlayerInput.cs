@@ -196,19 +196,34 @@ public class PlayerInput : MonoBehaviour
             RaycastHit2D L_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.left, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
             if (R_Trace)
             {
-                bIsInteraction = true;
-                AnimationController.SetBool("Interaction", bIsInteraction);
-                InteractionObj = R_Trace.collider.gameObject;
-                InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
-                SetInteractingMoving(true);
+                if (R_Trace.collider.gameObject.tag == "PullingObj")
+                {
+                    bIsInteraction = true;
+                    AnimationController.SetBool("Interaction", bIsInteraction);
+                    InteractionObj = R_Trace.collider.gameObject;
+                    InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                    SetInteractingMoving(true);
+                }
+                if (R_Trace.collider.gameObject.tag == "GravityObj")
+                {
+                    InteractionObj = R_Trace.collider.gameObject;
+                    InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
+                }
             }
             if (L_Trace)
             {
-                bIsInteraction = true;
-                AnimationController.SetBool("Interaction", bIsInteraction);
-                InteractionObj = L_Trace.collider.gameObject;
-                InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
-                SetInteractingMoving(true);
+                if (L_Trace.collider.gameObject.tag == "PullingObj")
+                {
+                    bIsInteraction = true;
+                    AnimationController.SetBool("Interaction", bIsInteraction);
+                    InteractionObj = L_Trace.collider.gameObject;
+                    InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                    SetInteractingMoving(true);
+                }
+                if (L_Trace.collider.gameObject.tag == "GravityObj")
+                {
+
+                }
             }
         }
     }
