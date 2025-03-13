@@ -21,7 +21,7 @@ public class PlatformControl : MonoBehaviour
     public float RotateSpeed;
     public float ObjectLoc;
     public float ReturnSpeed;
-
+    public float MaxPullDistance;
 
     [HideInInspector] public bool bIsInteracting;
 
@@ -49,7 +49,7 @@ public class PlatformControl : MonoBehaviour
             TargetCharacterInput = TargetCharacter.GetComponent<PlayerInput>();
         }
         InitPos = transform.position;
-        PreviousPos = Mathf.Clamp(Mathf.Abs(InitPos.x), 0.0f, 1.0f);
+        PreviousPos = Mathf.Abs(InitPos.x);
     }
 
     void Update()
@@ -99,31 +99,62 @@ public class PlatformControl : MonoBehaviour
 
     void MovePullTrigger()
     {
-        
         if (bIsInteracting)
         {
+            
             transform.position = new Vector3(TargetCharacterTransform.position.x + ObjectLoc, transform.position.y, transform.position.z);
             CaculatePercent();
-            if (transform.position.x <= 0.2f)
+            if (transform.position.x <= InitPos.x - MaxPullDistance)
             {
-                transform.position = new Vector3(0.2f, transform.position.y, transform.position.z);
+                transform.position = new Vector3(InitPos.x - MaxPullDistance, transform.position.y, transform.position.z);
                 PullMax = true;
+                bIsRotationStart = true;
+                for (int i = 0; i < TargetObjs.Count; i++)
+                {
+                    if (TargetObjs[i].GetComponent<BoxCollider2D>())
+                    {
+                        TargetObjs[i].GetComponent<BoxCollider2D>().isTrigger = false;
+                    }
+                }
             }
             else
             {
                 PullMax = false;
+                bIsRotationStart = false;
             }
         }
         else
         {
             transform.position = Vector3.Lerp(transform.position, InitPos, ReturnSpeed * Time.deltaTime);
-            CaculatePercent();
+
+            if (transform.position.x < InitPos.x)
+            {
+                for (int i = 0; i < TargetObjs.Count; i++)
+                {
+                    TargetObjs[i].GetComponent<SpriteRenderer>().color -= new Color(0.0003f, 0.0003f, 0.0003f, 0.0f);
+                    if (TargetObjs[i].GetComponent<SpriteRenderer>().color.r <= 0.6f)
+                    {
+                        TargetObjs[i].GetComponent<SpriteRenderer>().color = new Color(0.6f, 0.6f, 0.6f, 1.0f);
+                    }
+                }
+            }
+            if (transform.position.x >= InitPos.x - 0.03f)
+            {
+                transform.position = InitPos;
+                for (int i = 0; i < TargetObjs.Count; i++)
+                {
+                    if (TargetObjs[i].GetComponent<BoxCollider2D>())
+                    {
+                        TargetObjs[i].GetComponent<BoxCollider2D>().isTrigger = true;
+                    }
+                }
+            }
         }
     }
 
     void CaculatePercent()
     {
-        float ClampingCurrentPos = Mathf.Clamp(Mathf.Abs(transform.position.x), 0.0f, 1.0f);
+        float ClampingCurrentPos = Mathf.Abs(transform.position.x);
         if (ClampingCurrentPos < PreviousPos)
         {
             for (int i = 0; i < TargetObjs.Count; i++)
