@@ -62,10 +62,16 @@ public class PlayerInput : MonoBehaviour
     bool bIsInteraction;
     bool bIsSliding;
     bool bIsInteratingMoving;
+    bool bIsInverseGravity;
 
     public CapsuleCollider2D GetCharacterCapsule()
     {
         return CharacterCapsule;
+    }
+
+    public Rigidbody2D GetPlayerRigid()
+    {
+        return CharacterBody;
     }
 
     public bool SetInteractingMoving(bool Value)
@@ -150,8 +156,16 @@ public class PlayerInput : MonoBehaviour
         {
             bIsInteraction = false;
         }
+
         float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
-        CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
+        if (bIsInverseGravity)
+        {
+            CharacterBody.AddForce(Vector2.down * JumpValue, ForceMode2D.Impulse);
+        }
+        else
+        {
+            CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
+        }
         AnimationController.SetTrigger("Jumping");
     }
 
@@ -194,35 +208,62 @@ public class PlayerInput : MonoBehaviour
         {
             RaycastHit2D R_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.right, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
             RaycastHit2D L_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.left, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
-            if (R_Trace)
+            if (bIsInverseGravity)
             {
-                if (R_Trace.collider.gameObject.tag == "PullingObj")
+                if (R_Trace)
                 {
-                    bIsInteraction = true;
-                    AnimationController.SetBool("Interaction", bIsInteraction);
-                    InteractionObj = R_Trace.collider.gameObject;
-                    InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
-                    SetInteractingMoving(true);
+                    if (R_Trace.collider.gameObject.tag == "GravityObj")
+                    {
+                        InteractionObj.GetComponent<GravityControl>().ReturnOriginGravity();
+                        bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                        InteractionObj = null;
+                    }
                 }
-                if (R_Trace.collider.gameObject.tag == "GravityObj")
+                else if (L_Trace)
                 {
-                    InteractionObj = R_Trace.collider.gameObject;
-                    InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
+                    if (L_Trace.collider.gameObject.tag == "GravityObj")
+                    {
+                        InteractionObj.GetComponent<GravityControl>().ReturnOriginGravity();
+                        bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                        InteractionObj = null;
+                    }
                 }
             }
-            if (L_Trace)
+            else
             {
-                if (L_Trace.collider.gameObject.tag == "PullingObj")
+                if (R_Trace)
                 {
-                    bIsInteraction = true;
-                    AnimationController.SetBool("Interaction", bIsInteraction);
-                    InteractionObj = L_Trace.collider.gameObject;
-                    InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
-                    SetInteractingMoving(true);
+                    if (R_Trace.collider.gameObject.tag == "PullingObj")
+                    {
+                        bIsInteraction = true;
+                        AnimationController.SetBool("Interaction", bIsInteraction);
+                        InteractionObj = R_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                        SetInteractingMoving(true);
+                    }
+                    if (R_Trace.collider.gameObject.tag == "GravityObj")
+                    {
+                        InteractionObj = R_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
+                        bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                    }
                 }
-                if (L_Trace.collider.gameObject.tag == "GravityObj")
+                else if (L_Trace)
                 {
-
+                    if (L_Trace.collider.gameObject.tag == "PullingObj")
+                    {
+                        bIsInteraction = true;
+                        AnimationController.SetBool("Interaction", bIsInteraction);
+                        InteractionObj = L_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<PlatformControl>().bIsInteracting = true;
+                        SetInteractingMoving(true);
+                    }
+                    if (L_Trace.collider.gameObject.tag == "GravityObj")
+                    {
+                        InteractionObj = L_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
+                        bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                    }
                 }
             }
         }
@@ -254,6 +295,11 @@ public class PlayerInput : MonoBehaviour
             return;
         }
         ModifyMoveSpeedbyInteraction();
+        if (bIsInverseGravity)
+        {
+            CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed * -1.0f, CharacterBody.linearVelocity.y);
+            return;
+        }
         CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed, CharacterBody.linearVelocity.y);
     }
 
@@ -329,7 +375,7 @@ public class PlayerInput : MonoBehaviour
         {
             bIsInAir = true;
             IsReadytoPowerJump = false;
-            if (CharacterBody.linearVelocityY < 0.0f)
+            if (CharacterBody.linearVelocityY < 0.0f || CharacterBody.gravityScale < 3.0f)
             {
                 bIsFalling = true;
             }
@@ -396,6 +442,10 @@ public class PlayerInput : MonoBehaviour
         }
         else
         {
+            if (bIsInverseGravity)
+            {
+                return;
+            }
             bIsSliding = false;
             transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         }
