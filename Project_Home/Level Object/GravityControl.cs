@@ -7,7 +7,7 @@ public class GravityControl : MonoBehaviour
     public float NewGravityScale;
     public float CameraRotationSpeed;
     public GameObject CameraObject;
-
+    
     [HideInInspector] public bool bIsInverseGravity;
 
     Rigidbody2D TargetRigid;
@@ -31,8 +31,6 @@ public class GravityControl : MonoBehaviour
         Collider2D[] OverlapObjects = Physics2D.OverlapBoxAll(GravityWeightTargetSpace.bounds.center, GravityWeightTargetSpace.bounds.size, 0.0f);
         foreach(Collider2D obj in  OverlapObjects)
         {
-            // 레이어가 플레이어거나 GravityPlatform이면 여기서 중력값을 조절해줌
-            // 리지드 바디를 사용할지 그저 축 이동을 할지 생각해 볼것.
             if (obj.gameObject.layer == 3)
             {
                 TargetRigid = obj.gameObject.GetComponent<PlayerInput>().GetPlayerRigid();
@@ -40,6 +38,28 @@ public class GravityControl : MonoBehaviour
                 if (TargetRigid)
                 {
                     bIsInverseGravity = true;
+                    InvokeRepeating("ModifyGravityScale", 0.0f, Time.deltaTime);
+                }
+            }
+            if (obj.gameObject.layer == 10)
+            {
+                GravityObjWeight(obj.gameObject);
+            }
+        }
+    }
+
+    public void ReturnOriginGravity()
+    {
+        Collider2D[] OverlapObjects = Physics2D.OverlapBoxAll(GravityWeightTargetSpace.bounds.center, GravityWeightTargetSpace.bounds.size, 0.0f);
+        foreach (Collider2D obj in OverlapObjects)
+        {
+            if (obj.gameObject.layer == 3)
+            {
+                TargetRigid = obj.gameObject.GetComponent<PlayerInput>().GetPlayerRigid();
+                TargetTransform = obj.gameObject.GetComponent<Transform>();
+                if (TargetRigid)
+                {
+                    bIsInverseGravity = false;
                     InvokeRepeating("ModifyGravityScale", 0.0f, Time.deltaTime);
                 }
             }
@@ -57,6 +77,7 @@ public class GravityControl : MonoBehaviour
             else
             {
                 TargetRigid.gravityScale += Time.deltaTime * NewGravityScale;
+                Debug.Log(MainCamera.transform.eulerAngles.z);
                 if (TargetRigid.gravityScale >= 0.1f && MainCamera.transform.eulerAngles.z >= 90.0f)
                 {
                     TargetRigid.gravityScale = 0.1f;
@@ -73,18 +94,21 @@ public class GravityControl : MonoBehaviour
 
                 TargetTransform.Rotate(0.0f, 0.0f, CameraRotationSpeed * Time.deltaTime * -1.0f);
 
-                if (TargetTransform.eulerAngles.z <= 0.0f)
+                if (TargetTransform.eulerAngles.z > 180.0f)
                 {
                     TargetTransform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-                    CancelInvoke();
                 }
-                if (MainCamera.transform.eulerAngles.z <= 0.0f)
+                if (MainCamera.transform.eulerAngles.z > 180.0f)
                 {
                     MainCamera.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
                 }
                 if (TargetRigid.gravityScale >= 3.0f)
                 {
                     TargetRigid.gravityScale = 3.0f;
+                }
+                if (TargetTransform.rotation == Quaternion.Euler(0.0f, 0.0f, 0.0f) && MainCamera.transform.rotation == Quaternion.Euler(0.0f, 0.0f, 0.0f) && TargetRigid.gravityScale == 3.0f)
+                {
+                    CancelInvoke();
                 }
             }
         }
@@ -97,9 +121,9 @@ public class GravityControl : MonoBehaviour
             else
             {
                 TargetRigid.gravityScale -= Time.deltaTime * NewGravityScale;
-                if (TargetRigid.gravityScale <= -0.1f && MainCamera.transform.eulerAngles.z <= 90.0f)
+                if (TargetRigid.gravityScale <= -0.05f && MainCamera.transform.eulerAngles.z <= 90.0f)
                 {
-                    TargetRigid.gravityScale = -0.1f;
+                    TargetRigid.gravityScale = -0.05f;
                 }
                 if (TargetRigid.gravityScale < -0.7f)
                 {
@@ -116,7 +140,7 @@ public class GravityControl : MonoBehaviour
                 if (TargetTransform.eulerAngles.z >= 180.0f)
                 {
                     TargetTransform.rotation = Quaternion.Euler(0.0f, 0.0f, 180.0f);
-                    CancelInvoke();
+                    
                 }
                 if (MainCamera.transform.eulerAngles.z >= 180.0f)
                 {
@@ -126,27 +150,36 @@ public class GravityControl : MonoBehaviour
                 {
                     TargetRigid.gravityScale = -3.0f;
                 }
+                if (TargetTransform.rotation == Quaternion.Euler(0.0f, 0.0f, 180.0f) && MainCamera.transform.rotation == Quaternion.Euler(0.0f, 0.0f, 180.0f) && TargetRigid.gravityScale == -3.0f)
+                {
+                    CancelInvoke();
+                }
             }
         }
     }
 
-    public void ReturnOriginGravity()
+    void GravityObjWeight(GameObject gameobj)
     {
-        Collider2D[] OverlapObjects = Physics2D.OverlapBoxAll(GravityWeightTargetSpace.bounds.center, GravityWeightTargetSpace.bounds.size, 0.0f);
-        foreach (Collider2D obj in OverlapObjects)
+        if (gameobj)
         {
-            // 레이어가 플레이어거나 GravityPlatform이면 여기서 중력값을 조절해줌
-            // 리지드 바디를 사용할지 그저 축 이동을 할지 생각해 볼것.
-            if (obj.gameObject.layer == 3)
+            if (bIsInverseGravity)
             {
-                TargetRigid = obj.gameObject.GetComponent<PlayerInput>().GetPlayerRigid();
-                TargetTransform = obj.gameObject.GetComponent<Transform>();
-                if (TargetRigid)
-                {
-                    bIsInverseGravity = false;
-                    InvokeRepeating("ModifyGravityScale", 0.0f, Time.deltaTime);
-                }
+                InvokeRepeating("ChangeObjectPosition", 0.0f, Time.deltaTime);
+            }
+            else
+            {
+                InvokeRepeating("ReturnObjectPostion", 0.0f, Time.deltaTime);
             }
         }
+    }
+
+    void ChangeObjectPosition()
+    {
+        Debug.Log("GravityObj True");
+    }
+
+    void ReturnObjectPostion()
+    {
+        Debug.Log("GravityObj false");
     }
 }
