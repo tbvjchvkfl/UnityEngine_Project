@@ -295,7 +295,7 @@ public class PlayerInput : MonoBehaviour
             return;
         }
         ModifyMoveSpeedbyInteraction();
-        if (bIsInverseGravity)
+        if (bIsInverseGravity && CharacterBody.gravityScale < 0.0f)
         {
             CharacterBody.linearVelocity = new Vector2(MovementDirection.normalized.x * CurrentSpeed * -1.0f, CharacterBody.linearVelocity.y);
             return;
@@ -442,7 +442,7 @@ public class PlayerInput : MonoBehaviour
         }
         else
         {
-            if (bIsInverseGravity)
+            if (bIsInverseGravity || CharacterBody.gravityScale != 3.0f)
             {
                 return;
             }
