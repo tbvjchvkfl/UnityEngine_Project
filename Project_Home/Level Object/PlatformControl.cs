@@ -54,7 +54,7 @@ public class PlatformControl : MonoBehaviour
 
     void Update()
     {
-        SetPlatformRotation();
+        //SetPlatformRotation();
         MovePullTrigger();
     }
 

@@ -1,5 +1,6 @@
 using Unity.VisualScripting;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class GravityControl : MonoBehaviour
 {
@@ -41,10 +42,6 @@ public class GravityControl : MonoBehaviour
                     InvokeRepeating("ModifyGravityScale", 0.0f, Time.deltaTime);
                 }
             }
-            if (obj.gameObject.layer == 10)
-            {
-                GravityObjWeight(obj.gameObject);
-            }
         }
     }
 
@@ -77,7 +74,6 @@ public class GravityControl : MonoBehaviour
             else
             {
                 TargetRigid.gravityScale += Time.deltaTime * NewGravityScale;
-                Debug.Log(MainCamera.transform.eulerAngles.z);
                 if (TargetRigid.gravityScale >= 0.1f && MainCamera.transform.eulerAngles.z >= 90.0f)
                 {
                     TargetRigid.gravityScale = 0.1f;
@@ -156,30 +152,5 @@ public class GravityControl : MonoBehaviour
                 }
             }
         }
-    }
-
-    void GravityObjWeight(GameObject gameobj)
-    {
-        if (gameobj)
-        {
-            if (bIsInverseGravity)
-            {
-                InvokeRepeating("ChangeObjectPosition", 0.0f, Time.deltaTime);
-            }
-            else
-            {
-                InvokeRepeating("ReturnObjectPostion", 0.0f, Time.deltaTime);
-            }
-        }
-    }
-
-    void ChangeObjectPosition()
-    {
-        Debug.Log("GravityObj True");
-    }
-
-    void ReturnObjectPostion()
-    {
-        Debug.Log("GravityObj false");
     }
 }

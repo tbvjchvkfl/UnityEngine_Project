@@ -43,10 +43,7 @@ public class GravityObjMovement : MonoBehaviour
                 LerpSpeed = 0.5f;
             }
             ObjTransform.position = Vector3.Lerp(ObjTransform.position, TargetLocation, Time.deltaTime * LerpSpeed);
-            if (gameObject.name == "vise 2")
-            {
-                Debug.Log("vise 2 : " + ObjTransform.position.y);
-            }
+            
             if (ObjTransform.position.y >= CollisionActiveValue)
             {
                 ObjSprite.color += new Color(0.003f, 0.003f, 0.003f, 0.0f);
@@ -68,9 +65,14 @@ public class GravityObjMovement : MonoBehaviour
                 LerpSpeed = 0.5f;
             }
             ObjTransform.position = Vector3.Lerp(ObjTransform.position, OriginLocation, Time.deltaTime * LerpSpeed);
-            if (ObjTransform.position.y == OriginLocation.y)
+            if (ObjTransform.position.y <= OriginLocation.y + 5.0f)
             {
-                ObjCollider.isTrigger = true;
+                ObjSprite.color -= new Color(0.003f, 0.003f, 0.003f, 0.0f);
+                if (ObjSprite.color.r <= 0.6f)
+                {
+                    ObjSprite.color = new Color(0.6f, 0.6f, 0.6f, 1.0f);
+                    ObjCollider.isTrigger = true;
+                }
             }
         }
     }
