@@ -63,6 +63,8 @@ public class PlayerInput : MonoBehaviour
     bool bIsSliding;
     bool bIsInteratingMoving;
     bool bIsInverseGravity;
+    bool bIsDuringGravity;
+    bool bIsElevatorMove;
 
     public CapsuleCollider2D GetCharacterCapsule()
     {
@@ -81,7 +83,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnMove(InputValue inputValue)
     {
-        if (bIsRolling || bIsPowerJump || bIsSliding)
+        if (bIsRolling || bIsPowerJump || bIsSliding || bIsDuringGravity)
         {
             return;
         }
@@ -157,13 +159,15 @@ public class PlayerInput : MonoBehaviour
             bIsInteraction = false;
         }
 
-        float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
+        
         if (bIsInverseGravity)
         {
+            float JumpValue = MaxJumpPower + CharacterBody.linearVelocity.y;
             CharacterBody.AddForce(Vector2.down * JumpValue, ForceMode2D.Impulse);
         }
         else
         {
+            float JumpValue = MaxJumpPower - CharacterBody.linearVelocity.y;
             CharacterBody.AddForce(Vector2.up * JumpValue, ForceMode2D.Impulse);
         }
         AnimationController.SetTrigger("Jumping");
@@ -208,24 +212,36 @@ public class PlayerInput : MonoBehaviour
         {
             RaycastHit2D R_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.right, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
             RaycastHit2D L_Trace = Physics2D.Raycast(CharacterCapsule.bounds.center, Vector2.left, CharacterCapsule.bounds.size.x / 2, LayerMask.GetMask("Interactable"));
-            if (bIsInverseGravity)
+            if (bIsInverseGravity || bIsElevatorMove)
             {
                 if (R_Trace)
                 {
                     if (R_Trace.collider.gameObject.tag == "GravityObj")
                     {
+                        AnimationController.SetTrigger("GravityInteraction");
                         InteractionObj.GetComponent<GravityControl>().ReturnOriginGravity();
                         bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
                         InteractionObj = null;
+                    }
+                    if (R_Trace.collider.gameObject.tag == "ElevatorObj")
+                    {
+                        bIsElevatorMove = R_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = false;
+                        AnimationController.SetTrigger("GravityInteraction");
                     }
                 }
                 else if (L_Trace)
                 {
                     if (L_Trace.collider.gameObject.tag == "GravityObj")
                     {
+                        AnimationController.SetTrigger("GravityInteraction");
                         InteractionObj.GetComponent<GravityControl>().ReturnOriginGravity();
                         bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
                         InteractionObj = null;
+                    }
+                    if (L_Trace.collider.gameObject.tag == "ElevatorObj")
+                    {
+                        bIsElevatorMove = L_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = false;
+                        AnimationController.SetTrigger("GravityInteraction");
                     }
                 }
             }
@@ -246,6 +262,13 @@ public class PlayerInput : MonoBehaviour
                         InteractionObj = R_Trace.collider.gameObject;
                         InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
                         bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                        AnimationController.SetTrigger("GravityInteraction");
+                        StartCoroutine(DuringGravity());
+                    }
+                    if (R_Trace.collider.gameObject.tag == "ElevatorObj")
+                    {
+                        bIsElevatorMove = R_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = true;
+                        AnimationController.SetTrigger("GravityInteraction");
                     }
                 }
                 else if (L_Trace)
@@ -263,6 +286,13 @@ public class PlayerInput : MonoBehaviour
                         InteractionObj = L_Trace.collider.gameObject;
                         InteractionObj.GetComponent<GravityControl>().StartReverseGravity();
                         bIsInverseGravity = InteractionObj.GetComponent<GravityControl>().bIsInverseGravity;
+                        AnimationController.SetTrigger("GravityInteraction");
+                        StartCoroutine(DuringGravity());
+                    }
+                    if (L_Trace.collider.gameObject.tag == "ElevatorObj")
+                    {
+                        bIsElevatorMove = L_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = true;
+                        AnimationController.SetTrigger("GravityInteraction");
                     }
                 }
             }
@@ -341,6 +371,14 @@ public class PlayerInput : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         bIsPowerJump = false;
+    }
+
+    IEnumerator DuringGravity()
+    {
+        bIsDuringGravity = true;
+        MovementDirection = Vector2.zero;
+        yield return new WaitForSeconds(10.0f);
+        bIsDuringGravity = false;
     }
 
     void CheckGroundMoving()
