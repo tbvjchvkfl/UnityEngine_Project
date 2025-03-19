@@ -24,7 +24,14 @@ public class MovingElevator : MonoBehaviour
     {
         if (bIsInteraction)
         {
-            ObjTransform.position = Vector3.Lerp(ObjTransform.position, TargetLocation, Time.deltaTime * PlatformMovingSpeed);
+            if (ObjTransform.position.y >= -20.0f)
+            {
+                ObjTransform.Translate(Vector3.down * 0.01f);
+            }
+            else
+            {
+                ObjTransform.position = Vector3.Lerp(ObjTransform.position, TargetLocation, Time.deltaTime * PlatformMovingSpeed);
+            }
             if (ObjTransform.position.y <= TargetLocation.y)
             {
                 ObjTransform.position = TargetLocation;
@@ -32,7 +39,11 @@ public class MovingElevator : MonoBehaviour
         }
         else
         {
-
+            ObjTransform.position = Vector3.Lerp(ObjTransform.position, OriginalLocation, Time.deltaTime * PlatformMovingSpeed);
+            if (ObjTransform.position.y >= OriginalLocation.y)
+            {
+                ObjTransform.position = OriginalLocation;
+            }
         }
     }
 }
