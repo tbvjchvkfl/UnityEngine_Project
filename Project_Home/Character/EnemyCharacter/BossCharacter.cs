@@ -85,22 +85,59 @@ public class BossAttackState : IBossCharacterState
 public class BossSkillState : IBossCharacterState
 {
     Vector3 TargetLocation;
-    
+    float AppearHeight;
+    float ExcuteDelayTime;
+    float SkillAfterExcuteDelayTime;
+    GameObject SkillNotice;
+    BossCharacter Boss;
+    bool bIsSlampReady;
+    AnimationClip SlamptoIdle;
+
     public void EnterState(BossCharacter boss)
     {
-        TargetLocation = boss.TargetCharacter.transform.position;
-        boss.AnimationController.SetTrigger("Skill Attack");
-        boss.ModifyingState(new BossIdleState());
+        SkillAfterExcuteDelayTime = boss.SkillAfterExcuteDelayTime;
+        SlamptoIdle = boss.SlamptoIdle;
+        Boss = boss;
+        boss.bIsSkillAttack = true;
+        bIsSlampReady = true;
+        ExcuteDelayTime = boss.SkillExcuteDelayTime;
+        AppearHeight = boss.AppearHeight;
+        TargetLocation = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y + AppearHeight, boss.TargetCharacter.transform.position.z);
+        SkillNotice = GameObject.Instantiate<GameObject>(boss.SkillNotice);
+        SkillNotice.transform.position = TargetLocation;
     }
 
     public void ExcuteState(BossCharacter boss)
     {
-        
+        boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
+        if (SkillNotice)
+        {
+            ExcuteDelayTime -= Time.deltaTime;
+            SkillNotice.GetComponent<SpriteRenderer>().color += new Color(0.0f, 0.0f, 0.0f, Time.deltaTime * 0.5f);
+            if (ExcuteDelayTime <= 0.0f && SkillNotice.GetComponent<SpriteRenderer>().color.a >= 1.0f)
+            {
+                SkillNotice.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+                GameObject.Destroy(SkillNotice);
+                boss.transform.position = TargetLocation;
+                boss.AnimationController.SetTrigger("Skill Attack");
+                boss.StartCoroutine(SkillAttackAfterDelay());
+            }
+        }
     }
 
     public void ExitState(BossCharacter boss)
     {
+        boss.bIsSkillAttack = false;
+    }
 
+    IEnumerator SkillAttackAfterDelay()
+    {
+        // 여기서 레벨 무언가를 소환
+        yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
+        bIsSlampReady = false;
+        Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
+        yield return new WaitForSeconds(SlamptoIdle.length);
+        Boss.ModifyingState(new BossIdleState());
     }
 }
 
@@ -108,39 +145,53 @@ public class BossCharacter : MonoBehaviour
 {
     [Header("GameObject")]
     public GameObject TargetCharacter;
-    public BoxCollider2D SkillAttackSpace;
     public BoxCollider2D AttackForward;
     public BoxCollider2D AttackBackward;
+    public BoxCollider2D SkillAttackSpace;
+    public BoxCollider2D SkillAttackPoint;
+    public GameObject SkillNotice;
 
     [Header("Boss State Value")]
     public float KickAttackDelay;
     public float SkillDelayTime;
+    public float SkillExcuteDelayTime;
+    public float AppearHeight;
+    public float SkillAfterExcuteDelayTime;
+
     public float FirstPhaseMaxHP;
     public float MiddlePhaseMaxHP;
     public float LastPhaseMaxHP;
     public float CurrentHP;
     public float KnockBackPower;
+    
+
 
     [Header("Animation Clip")]
     public AnimationClip PunchAttack;
     public AnimationClip KickAttack;
     public AnimationClip GroundSlashAttack;
-
-    IBossCharacterState BossState;
+    public AnimationClip SlamptoIdle;
 
     [HideInInspector] public Animator AnimationController;
-
+    [HideInInspector] public Rigidbody2D CharacterBody;
+    [HideInInspector] public bool bIsSkillAttack;
+    [HideInInspector] public bool bIsSlamReady;
     [HideInInspector] public bool bIsFirstPhase;
     [HideInInspector] public bool bIsMiddlePhase;
     [HideInInspector] public bool bIsLastPhase;
 
+
+    IBossCharacterState BossState;
+
     SpriteRenderer SpriteRenderer;
     BoxCollider2D AttackPoint;
+    
 
     void Awake()
     {
         AnimationController = GetComponent<Animator>();
         SpriteRenderer = GetComponent<SpriteRenderer>();
+        CharacterBody = GetComponent<Rigidbody2D>();
         BossState = new BossIdleState();
         BossState.EnterState(this);
 
@@ -174,6 +225,10 @@ public class BossCharacter : MonoBehaviour
 
     void CheckTargetPosition()
     {
+        if (bIsSkillAttack)
+        {
+            return;
+        }
         if (TargetCharacter.gameObject.transform.position.x < transform.position.x)
         {
             SpriteRenderer.flipX = true;
@@ -191,6 +246,16 @@ public class BossCharacter : MonoBehaviour
         Collider2D AttackCollision = Physics2D.OverlapBox(AttackPoint.bounds.center, AttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (AttackCollision)
         {
+            AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
+        }
+    }
+
+    void AnimEventSkillAttack()
+    {
+        Collider2D AttackCollision = Physics2D.OverlapBox(SkillAttackPoint.bounds.center, SkillAttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (AttackCollision)
+        {
+            AttackCollision.gameObject.GetComponent<PlayerInfo>().bIsStun = true;
             AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
         }
     }
