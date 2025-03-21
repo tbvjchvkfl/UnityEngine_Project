@@ -32,10 +32,9 @@ public class PlayerInput : MonoBehaviour
 
     [Header("Animation Data")]
     public AnimationClip RollingAnimation;
-    public AnimationClip DeathAnimation;
-    public AnimationClip HitAnimation;
-    
 
+
+    
     // ====================================
     //          - Private Data-
     // ====================================
@@ -47,6 +46,7 @@ public class PlayerInput : MonoBehaviour
     Animator AnimationController;
     BoxCollider2D AttackPoint;
     GameObject InteractionObj;
+    PlayerInfo PlayerInfoData;
 
     // Movement Data
     Vector2 MovementDirection;
@@ -65,6 +65,9 @@ public class PlayerInput : MonoBehaviour
     bool bIsInverseGravity;
     bool bIsDuringGravity;
     bool bIsElevatorMove;
+    bool bIsStun;
+    bool bIsHit;
+    bool bIsDeath;
 
     public CapsuleCollider2D GetCharacterCapsule()
     {
@@ -83,7 +86,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnMove(InputValue inputValue)
     {
-        if (bIsRolling || bIsPowerJump || bIsSliding || bIsDuringGravity)
+        if (bIsRolling || bIsPowerJump || bIsSliding || bIsDuringGravity || bIsHit || bIsDeath || bIsStun)
         {
             return;
         }
@@ -145,7 +148,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnJump()
     {
-        if (bIsInAir || bIsSliding)
+        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun)
         {
             return;
         }
@@ -175,7 +178,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnDash()
     {
-        if (bIsInAir || bIsSliding)
+        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun)
         {
             return;
         }
@@ -188,6 +191,10 @@ public class PlayerInput : MonoBehaviour
 
     public void OnView(InputValue inputValue)
     {
+        if (bIsDeath)
+        {
+            return;
+        }
         if (inputValue.isPressed)
         {
             IsView = true;
@@ -305,12 +312,14 @@ public class PlayerInput : MonoBehaviour
         CharacterSprite = GetComponent<SpriteRenderer>();
         CharacterCapsule = GetComponent<CapsuleCollider2D>();
         AnimationController = GetComponent<Animator>();
+        PlayerInfoData = GetComponent<PlayerInfo>();
 
         CurrentSpeed = MaxSpeed;
     }
 
     void Update()
     {
+        ApplyPlayerInfoValue();
         CheckGroundMoving();
         CheckInAir();
         CheckWall();
@@ -320,7 +329,7 @@ public class PlayerInput : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (bIsRolling || bIsPowerJump || bIsSliding)
+        if (bIsRolling || bIsPowerJump || bIsSliding || bIsHit || bIsDeath || bIsStun)
         {
             return;
         }
@@ -507,5 +516,12 @@ public class PlayerInput : MonoBehaviour
         {
             CurrentSpeed = MaxSpeed;
         }
+    }
+
+    void ApplyPlayerInfoValue()
+    {
+        bIsStun = PlayerInfoData.bIsStun;
+        bIsHit = PlayerInfoData.bIsHit;
+        bIsDeath = PlayerInfoData.bIsDeath;
     }
 }
