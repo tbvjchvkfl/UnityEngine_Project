@@ -84,27 +84,19 @@ public class BossAttackState : IBossCharacterState
 
 public class BossSkillState : IBossCharacterState
 {
+    GameObject SkillNotice;
+    BossCharacter Boss;
+    AnimationClip SlamptoIdle;
     Vector3 TargetLocation;
+    bool bIsSlampReady;
     float AppearHeight;
     float ExcuteDelayTime;
     float SkillAfterExcuteDelayTime;
-    GameObject SkillNotice;
-    BossCharacter Boss;
-    bool bIsSlampReady;
-    AnimationClip SlamptoIdle;
 
     public void EnterState(BossCharacter boss)
     {
-        SkillAfterExcuteDelayTime = boss.SkillAfterExcuteDelayTime;
-        SlamptoIdle = boss.SlamptoIdle;
-        Boss = boss;
-        boss.bIsSkillAttack = true;
-        bIsSlampReady = true;
-        ExcuteDelayTime = boss.SkillExcuteDelayTime;
-        AppearHeight = boss.AppearHeight;
-        TargetLocation = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y + AppearHeight, boss.TargetCharacter.transform.position.z);
-        SkillNotice = GameObject.Instantiate<GameObject>(boss.SkillNotice);
-        SkillNotice.transform.position = TargetLocation;
+        SkillEssentialData(boss);
+        CheckTargetLoc(boss);
     }
 
     public void ExcuteState(BossCharacter boss)
@@ -133,11 +125,38 @@ public class BossSkillState : IBossCharacterState
     IEnumerator SkillAttackAfterDelay()
     {
         // 여기서 레벨 무언가를 소환
+        //Boss.bIsCameraMoving = true;
         yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
         bIsSlampReady = false;
         Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
         yield return new WaitForSeconds(SlamptoIdle.length);
         Boss.ModifyingState(new BossIdleState());
+    }
+
+    void SkillEssentialData(BossCharacter boss)
+    {
+        Boss = boss;
+        SkillAfterExcuteDelayTime = boss.SkillAfterExcuteDelayTime;
+        SlamptoIdle = boss.SlamptoIdle;
+        bIsSlampReady = true;
+        ExcuteDelayTime = boss.SkillExcuteDelayTime;
+        AppearHeight = boss.AppearHeight;
+        boss.bIsSkillAttack = true;
+    }
+
+    void CheckTargetLoc(BossCharacter boss)
+    {
+        TargetLocation = new Vector3(boss.TargetCharacter.transform.position.x, boss.TargetCharacter.transform.position.y + AppearHeight, boss.TargetCharacter.transform.position.z);
+        SkillNotice = GameObject.Instantiate<GameObject>(boss.SkillNotice);
+        SkillNotice.transform.position = TargetLocation;
+        if (boss.transform.position.x < boss.TargetCharacter.transform.position.x)
+        {
+            SkillNotice.GetComponent<SpriteRenderer>().flipX = true;
+        }
+        else
+        {
+            SkillNotice.GetComponent<SpriteRenderer>().flipX = false;
+        }
     }
 }
 
@@ -150,7 +169,10 @@ public class BossCharacter : MonoBehaviour
     public BoxCollider2D SkillAttackSpace;
     public BoxCollider2D SkillAttackPoint;
     public GameObject SkillNotice;
-
+    public GameObject Camera;
+    public GameObject TargetAttackPlace_L;
+    public GameObject TargetAttackPlace_R;
+    
     [Header("Boss State Value")]
     public float KickAttackDelay;
     public float SkillDelayTime;
@@ -163,7 +185,10 @@ public class BossCharacter : MonoBehaviour
     public float LastPhaseMaxHP;
     public float CurrentHP;
     public float KnockBackPower;
-    
+
+    [Header("Component Value")]
+    public float CameraZoomSpeed;
+
 
 
     [Header("Animation Clip")]
@@ -179,7 +204,7 @@ public class BossCharacter : MonoBehaviour
     [HideInInspector] public bool bIsFirstPhase;
     [HideInInspector] public bool bIsMiddlePhase;
     [HideInInspector] public bool bIsLastPhase;
-
+    [HideInInspector] public bool bIsCameraMoving;
 
     IBossCharacterState BossState;
 
@@ -209,6 +234,7 @@ public class BossCharacter : MonoBehaviour
     void Update()
     {
         CheckTargetPosition();
+        CameraZoomSet();
         BossState.ExcuteState(this);
     }
 
@@ -257,6 +283,27 @@ public class BossCharacter : MonoBehaviour
         {
             AttackCollision.gameObject.GetComponent<PlayerInfo>().bIsStun = true;
             AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
+        }
+    }
+
+    public void CameraZoomSet()
+    {
+        if (Camera && bIsCameraMoving)
+        {
+            Camera.GetComponent<Camera>().orthographicSize += Time.deltaTime * CameraZoomSpeed;
+            Debug.Log(Camera.GetComponent<Camera>().orthographicSize);
+            if (Camera.GetComponent<Camera>().orthographicSize >= 10.0f)
+            {
+                Camera.GetComponent<Camera>().orthographicSize = 10.0f;
+            }
+        }
+        if (Camera && !bIsCameraMoving)
+        {
+            Camera.GetComponent<Camera>().orthographicSize -= Time.deltaTime * CameraZoomSpeed;
+            if (Camera.GetComponent<Camera>().orthographicSize <= 5.0f)
+            {
+                Camera.GetComponent<Camera>().orthographicSize = 5.0f;
+            }
         }
     }
 }
