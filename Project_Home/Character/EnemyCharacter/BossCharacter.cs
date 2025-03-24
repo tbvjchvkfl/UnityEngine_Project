@@ -108,6 +108,7 @@ public class BossSkillState : IBossCharacterState
             SkillNotice.GetComponent<SpriteRenderer>().color += new Color(0.0f, 0.0f, 0.0f, Time.deltaTime * 0.5f);
             if (ExcuteDelayTime <= 0.0f && SkillNotice.GetComponent<SpriteRenderer>().color.a >= 1.0f)
             {
+                
                 SkillNotice.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
                 GameObject.Destroy(SkillNotice);
                 boss.transform.position = TargetLocation;
@@ -120,12 +121,13 @@ public class BossSkillState : IBossCharacterState
     public void ExitState(BossCharacter boss)
     {
         boss.bIsSkillAttack = false;
+        boss.bIsCameraMoving = false;
     }
 
     IEnumerator SkillAttackAfterDelay()
     {
         // 여기서 레벨 무언가를 소환
-        //Boss.bIsCameraMoving = true;
+        
         yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
         bIsSlampReady = false;
         Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
@@ -170,8 +172,7 @@ public class BossCharacter : MonoBehaviour
     public BoxCollider2D SkillAttackPoint;
     public GameObject SkillNotice;
     public GameObject Camera;
-    public GameObject TargetAttackPlace_L;
-    public GameObject TargetAttackPlace_R;
+    public GameObject BattleObject;
     
     [Header("Boss State Value")]
     public float KickAttackDelay;
@@ -179,6 +180,7 @@ public class BossCharacter : MonoBehaviour
     public float SkillExcuteDelayTime;
     public float AppearHeight;
     public float SkillAfterExcuteDelayTime;
+    public float PlatformMovingDistance;
 
     public float FirstPhaseMaxHP;
     public float MiddlePhaseMaxHP;
@@ -210,7 +212,8 @@ public class BossCharacter : MonoBehaviour
 
     SpriteRenderer SpriteRenderer;
     BoxCollider2D AttackPoint;
-    
+    Vector3 InitBattleObjectLocation;
+    Vector3 BattleObjTargetLocation;
 
     void Awake()
     {
@@ -219,6 +222,9 @@ public class BossCharacter : MonoBehaviour
         CharacterBody = GetComponent<Rigidbody2D>();
         BossState = new BossIdleState();
         BossState.EnterState(this);
+
+        InitBattleObjectLocation = BattleObject.transform.position;
+        BattleObjTargetLocation = new Vector3(InitBattleObjectLocation.x, InitBattleObjectLocation.y + PlatformMovingDistance, InitBattleObjectLocation.z);
 
         bIsFirstPhase = true;
         bIsMiddlePhase = false;
@@ -235,6 +241,7 @@ public class BossCharacter : MonoBehaviour
     {
         CheckTargetPosition();
         CameraZoomSet();
+        SetAttackPlace();
         BossState.ExcuteState(this);
     }
 
@@ -278,6 +285,7 @@ public class BossCharacter : MonoBehaviour
 
     void AnimEventSkillAttack()
     {
+        bIsCameraMoving = true;
         Collider2D AttackCollision = Physics2D.OverlapBox(SkillAttackPoint.bounds.center, SkillAttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (AttackCollision)
         {
@@ -291,7 +299,6 @@ public class BossCharacter : MonoBehaviour
         if (Camera && bIsCameraMoving)
         {
             Camera.GetComponent<Camera>().orthographicSize += Time.deltaTime * CameraZoomSpeed;
-            Debug.Log(Camera.GetComponent<Camera>().orthographicSize);
             if (Camera.GetComponent<Camera>().orthographicSize >= 10.0f)
             {
                 Camera.GetComponent<Camera>().orthographicSize = 10.0f;
@@ -303,6 +310,26 @@ public class BossCharacter : MonoBehaviour
             if (Camera.GetComponent<Camera>().orthographicSize <= 5.0f)
             {
                 Camera.GetComponent<Camera>().orthographicSize = 5.0f;
+            }
+        }
+    }
+
+    void SetAttackPlace()
+    {
+        if (bIsCameraMoving)
+        {
+            BattleObject.transform.Translate(Vector3.up * 0.1f);
+            if (BattleObject.transform.position.y >= BattleObjTargetLocation.y)
+            {
+                BattleObject.transform.position = BattleObjTargetLocation;
+            }
+        }
+        else
+        {
+            BattleObject.transform.Translate(Vector3.down * 0.1f);
+            if (BattleObject.transform.position.y <= InitBattleObjectLocation.y)
+            {
+                BattleObject.transform.position = InitBattleObjectLocation;
             }
         }
     }
