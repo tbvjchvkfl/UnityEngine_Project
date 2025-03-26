@@ -7,20 +7,19 @@ public class CanonController : MonoBehaviour
     public GameObject CannonTop;
     public GameObject PlayerCharacter;
     public GameObject CanonBullet;
-    public GameObject MuzzleFlashLocation;
+    public GameObject MuzzleFlash;
     public float RotationSpeed;
 
     [HideInInspector] public bool bIsControlled;
 
     PlayerInfo CharacterInfo;
-    Vector3 InitBulletLocation;
     int BulletNum;
-
+    float ShootingPower;
 
     void Awake()
     {
         CharacterInfo = PlayerCharacter.GetComponent<PlayerInfo>();
-        InitBulletLocation = MuzzleFlashLocation.transform.position;
+        MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
     }
 
     void Update()
@@ -96,14 +95,31 @@ public class CanonController : MonoBehaviour
     {
         if (bIsControlled)
         {
-            if (Input.GetKeyDown(KeyCode.X))
+            if (Input.GetKey(KeyCode.X))
+            {
+                
+            }
+            else if (Input.GetKeyUp(KeyCode.X))
             {
                 if (BulletNum > 0)
                 {
+                    SetMuzzleFlashVisibilty();
                     GameObject Bullet = Instantiate(CanonBullet);
-                    Bullet.transform.position = InitBulletLocation;
+                    Bullet.transform.position = MuzzleFlash.transform.position;
+                    Bullet.GetComponent<Bullet>().BulletFire(CannonTop.transform.up, ShootingPower);
                 }
             }
         }
+    }
+
+    void SetMuzzleFlashVisibilty()
+    {
+        MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        Invoke("InvisibleMuzzleFlash", 0.3f);
+    }
+
+    void InvisibleMuzzleFlash()
+    {
+        MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
     }
 }
