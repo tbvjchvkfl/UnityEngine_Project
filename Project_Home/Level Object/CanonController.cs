@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,18 +9,23 @@ public class CanonController : MonoBehaviour
     public GameObject PlayerCharacter;
     public GameObject CanonBullet;
     public GameObject MuzzleFlash;
+    public GameObject TrajectoryDot;
     public float RotationSpeed;
+    public float PowerWeight;
 
     [HideInInspector] public bool bIsControlled;
 
     PlayerInfo CharacterInfo;
     int BulletNum;
     float ShootingPower;
+    List<GameObject> TrajectoryDots;
+    Vector3 BulletDirection;
 
     void Awake()
     {
         CharacterInfo = PlayerCharacter.GetComponent<PlayerInfo>();
         MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+        TrajectoryDots = new List<GameObject>();
     }
 
     void Update()
@@ -38,11 +44,12 @@ public class CanonController : MonoBehaviour
     public void OnUnPossesController()
     {
         bIsControlled = false;
+        HideTrajectory();
     }
 
     void SetEssentialData()
     {
-        
+        BulletDirection = CannonTop.transform.up;
     }
 
     void SetCanonInput()
@@ -95,21 +102,60 @@ public class CanonController : MonoBehaviour
     {
         if (bIsControlled)
         {
-            if (Input.GetKey(KeyCode.X))
+            if (Input.GetKeyDown(KeyCode.X))
             {
-                
+                ShowTrajectory();
+            }
+            else if (Input.GetKey(KeyCode.X))
+            {
+                UpdateTrajectory();
             }
             else if (Input.GetKeyUp(KeyCode.X))
             {
                 if (BulletNum > 0)
                 {
+                    HideTrajectory();
                     SetMuzzleFlashVisibilty();
                     GameObject Bullet = Instantiate(CanonBullet);
                     Bullet.transform.position = MuzzleFlash.transform.position;
-                    Bullet.GetComponent<Bullet>().BulletFire(CannonTop.transform.up, ShootingPower);
+                    Bullet.GetComponent<Bullet>().BulletFire(BulletDirection, ShootingPower);
+                    ShootingPower = 0.0f;
                 }
             }
         }
+    }
+
+    void ShowTrajectory()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            GameObject TrajecDot = Instantiate(TrajectoryDot);
+            TrajecDot.transform.position = (BulletDirection * i) + MuzzleFlash.transform.position;
+            TrajectoryDots.Add(TrajecDot);
+        }
+    }
+
+    void UpdateTrajectory()
+    {
+        ShootingPower += Time.deltaTime * PowerWeight;
+        ShootingPower = Mathf.Clamp(ShootingPower, 0, 10.0f);
+
+        for (int i = 0; i < TrajectoryDots.Count; i++)
+        {
+            float DotInterval = i * 0.1f;
+            float TrajectX = BulletDirection.x * ShootingPower * DotInterval;
+            float TrajectY = (BulletDirection.y * ShootingPower * DotInterval) - (Physics2D.gravity.magnitude * DotInterval * DotInterval) / 2.0f;
+            TrajectoryDots[i].transform.position = MuzzleFlash.transform.position + new Vector3(TrajectX, TrajectY, 0.0f);
+        }
+    }
+
+    void HideTrajectory()
+    {
+        for (int i = 0; i < TrajectoryDots.Count; i++)
+        {
+            GameObject.Destroy(TrajectoryDots[i]);
+        }
+        TrajectoryDots.Clear();
     }
 
     void SetMuzzleFlashVisibilty()

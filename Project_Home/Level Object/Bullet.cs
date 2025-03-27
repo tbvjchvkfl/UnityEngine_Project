@@ -22,4 +22,12 @@ public class Bullet : MonoBehaviour
     {
         BulletRigid.AddForce(FireDirection * FireForce, ForceMode2D.Impulse);
     }
+
+    void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == 11)
+        {
+            collision.gameObject.GetComponent<BossCharacter>().
+        }
+    }
 }
