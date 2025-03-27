@@ -126,8 +126,6 @@ public class BossSkillState : IBossCharacterState
 
     IEnumerator SkillAttackAfterDelay()
     {
-        // 여기서 레벨 무언가를 소환
-        
         yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
         bIsSlampReady = false;
         Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
@@ -173,7 +171,9 @@ public class BossCharacter : MonoBehaviour
     public GameObject SkillNotice;
     public GameObject Camera;
     public GameObject BattleObject;
-    
+    public GameObject LeftClampingWall;
+    public GameObject RightClampingWall;
+
     [Header("Boss State Value")]
     public float KickAttackDelay;
     public float SkillDelayTime;
@@ -181,6 +181,7 @@ public class BossCharacter : MonoBehaviour
     public float AppearHeight;
     public float SkillAfterExcuteDelayTime;
     public float PlatformMovingDistance;
+    
 
     public float FirstPhaseMaxHP;
     public float MiddlePhaseMaxHP;
@@ -190,7 +191,9 @@ public class BossCharacter : MonoBehaviour
 
     [Header("Component Value")]
     public float CameraZoomSpeed;
-
+    public float WallMovingSpeed;
+    public float LeftWallMoveDistance;
+    public float RightWallMoveDistance;
 
 
     [Header("Animation Clip")]
@@ -215,6 +218,12 @@ public class BossCharacter : MonoBehaviour
     Vector3 InitBattleObjectLocation;
     Vector3 BattleObjTargetLocation;
 
+    Vector3 InitLeftClampingWallLocation;
+    Vector3 InitRightClampingWallLocation;
+    Vector3 LeftClampingTargetLocation;
+    Vector3 RightClampingTargetLocation;
+
+
     void Awake()
     {
         AnimationController = GetComponent<Animator>();
@@ -225,6 +234,12 @@ public class BossCharacter : MonoBehaviour
 
         InitBattleObjectLocation = BattleObject.transform.position;
         BattleObjTargetLocation = new Vector3(InitBattleObjectLocation.x, InitBattleObjectLocation.y + PlatformMovingDistance, InitBattleObjectLocation.z);
+
+        InitLeftClampingWallLocation = LeftClampingWall.transform.position;
+        LeftClampingTargetLocation = new Vector3(InitLeftClampingWallLocation.x + LeftWallMoveDistance, InitLeftClampingWallLocation.y, InitLeftClampingWallLocation.z);
+
+        InitRightClampingWallLocation = RightClampingWall.transform.position;
+        RightClampingTargetLocation = new Vector3(InitRightClampingWallLocation.x + RightWallMoveDistance, InitRightClampingWallLocation.y, InitRightClampingWallLocation.z);
 
         bIsFirstPhase = true;
         bIsMiddlePhase = false;
@@ -242,6 +257,7 @@ public class BossCharacter : MonoBehaviour
         CheckTargetPosition();
         CameraZoomSet();
         SetAttackPlace();
+        SetClampingWallLoc();
         BossState.ExcuteState(this);
     }
 
@@ -332,5 +348,40 @@ public class BossCharacter : MonoBehaviour
                 BattleObject.transform.position = InitBattleObjectLocation;
             }
         }
+    }
+
+    void SetClampingWallLoc()
+    {
+        if (bIsCameraMoving)
+        {
+            LeftClampingWall.transform.Translate(Vector3.left * WallMovingSpeed);
+            if (LeftClampingWall.transform.position.x <= LeftClampingTargetLocation.x)
+            {
+                LeftClampingWall.transform.position = LeftClampingTargetLocation;
+            }
+            RightClampingWall.transform.Translate(Vector3.right * WallMovingSpeed);
+            if (RightClampingWall.transform.position.x >= RightClampingTargetLocation.x)
+            {
+                RightClampingWall.transform.position = RightClampingTargetLocation;
+            }
+        }
+        else
+        {
+            LeftClampingWall.transform.Translate(Vector3.right * WallMovingSpeed);
+            if (LeftClampingWall.transform.position.x >= InitLeftClampingWallLocation.x)
+            {
+                LeftClampingWall.transform.position = InitLeftClampingWallLocation;
+            }
+            RightClampingWall.transform.Translate(Vector3.left * WallMovingSpeed);
+            if (RightClampingWall.transform.position.x <= InitRightClampingWallLocation.x)
+            {
+                RightClampingWall.transform.position = InitRightClampingWallLocation;
+            }
+        }
+    }
+
+    public void TakeDamage(int Damage)
+    {
+
     }
 }
