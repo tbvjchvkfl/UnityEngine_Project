@@ -44,7 +44,7 @@ public class BossIdleState : IBossCharacterState
         }
         else
         {
-            //boss.ModifyingState(new MoveState());
+            boss.ModifyingState(new BossMoveState());
         }
     }
 
@@ -122,10 +122,15 @@ public class BossSkillState : IBossCharacterState
     {
         boss.bIsSkillAttack = false;
         boss.bIsCameraMoving = false;
+        boss.bIsPlatformMoving = false;
     }
 
     IEnumerator SkillAttackAfterDelay()
     {
+        Boss.bIsCameraMoving = true;
+        yield return new WaitForSeconds(0.5f);
+        Boss.bIsPlatformMoving = true;
+
         yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
         bIsSlampReady = false;
         Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
@@ -160,6 +165,42 @@ public class BossSkillState : IBossCharacterState
     }
 }
 
+public class BossMoveState : IBossCharacterState
+{
+    public void EnterState(BossCharacter boss)
+    {
+        
+    }
+
+    public void ExcuteState(BossCharacter boss)
+    {
+        SetCharacterMovement(boss);
+        Collider2D HitEnemy = Physics2D.OverlapBox(boss.SkillAttackSpace.bounds.center, boss.SkillAttackSpace.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            boss.ModifyingState(new BossIdleState());
+        }
+    }
+
+    public void ExitState(BossCharacter boss)
+    {
+
+    }
+
+    void SetCharacterMovement(BossCharacter boss)
+    {
+        if (boss.TargetCharacter.transform.position.x <= boss.transform.position.x)
+        {
+            boss.MovementDirection = Vector2.left;
+        }
+        else if (boss.TargetCharacter.transform.position.x > boss.transform.position.x)
+        {
+            boss.MovementDirection = Vector2.right;
+        }
+        boss.CharacterBody.linearVelocity = new Vector2(boss.MovementDirection.x * boss.MoveSpeed, boss.CharacterBody.linearVelocityY);
+    }
+}
+
 public class BossCharacter : MonoBehaviour
 {
     [Header("GameObject")]
@@ -181,12 +222,9 @@ public class BossCharacter : MonoBehaviour
     public float AppearHeight;
     public float SkillAfterExcuteDelayTime;
     public float PlatformMovingDistance;
+    public float MoveSpeed;
+    public float MaxHP;
     
-
-    public float FirstPhaseMaxHP;
-    public float MiddlePhaseMaxHP;
-    public float LastPhaseMaxHP;
-    public float CurrentHP;
     public float KnockBackPower;
 
     [Header("Component Value")]
@@ -202,14 +240,14 @@ public class BossCharacter : MonoBehaviour
     public AnimationClip GroundSlashAttack;
     public AnimationClip SlamptoIdle;
 
+    [HideInInspector] public Vector2 MovementDirection;
     [HideInInspector] public Animator AnimationController;
     [HideInInspector] public Rigidbody2D CharacterBody;
+    [HideInInspector] public float CurrentHP;
     [HideInInspector] public bool bIsSkillAttack;
     [HideInInspector] public bool bIsSlamReady;
-    [HideInInspector] public bool bIsFirstPhase;
-    [HideInInspector] public bool bIsMiddlePhase;
-    [HideInInspector] public bool bIsLastPhase;
     [HideInInspector] public bool bIsCameraMoving;
+    [HideInInspector] public bool bIsPlatformMoving;
 
     IBossCharacterState BossState;
 
@@ -222,7 +260,6 @@ public class BossCharacter : MonoBehaviour
     Vector3 InitRightClampingWallLocation;
     Vector3 LeftClampingTargetLocation;
     Vector3 RightClampingTargetLocation;
-
 
     void Awake()
     {
@@ -241,15 +278,7 @@ public class BossCharacter : MonoBehaviour
         InitRightClampingWallLocation = RightClampingWall.transform.position;
         RightClampingTargetLocation = new Vector3(InitRightClampingWallLocation.x + RightWallMoveDistance, InitRightClampingWallLocation.y, InitRightClampingWallLocation.z);
 
-        bIsFirstPhase = true;
-        bIsMiddlePhase = false;
-        bIsLastPhase = false;
-
-        FirstPhaseMaxHP = 100.0f;
-        MiddlePhaseMaxHP = 100.0f;
-        LastPhaseMaxHP = 100.0f;
-
-        CurrentHP = FirstPhaseMaxHP;
+        CurrentHP = MaxHP;
     }
 
     void Update()
@@ -301,13 +330,29 @@ public class BossCharacter : MonoBehaviour
 
     void AnimEventSkillAttack()
     {
-        bIsCameraMoving = true;
+        StartCoroutine(CameraShake());
         Collider2D AttackCollision = Physics2D.OverlapBox(SkillAttackPoint.bounds.center, SkillAttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (AttackCollision)
         {
             AttackCollision.gameObject.GetComponent<PlayerInfo>().bIsStun = true;
             AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
         }
+    }
+
+    IEnumerator CameraShake()
+    {
+        Vector3 CameraInitLocation = Camera.transform.position;
+        InvokeRepeating("CameraShaking", 0.0f, Time.deltaTime);
+        yield return new WaitForSeconds(0.3f);
+        CancelInvoke();
+        Camera.transform.position = CameraInitLocation;
+    }
+
+    void CameraShaking()
+    {
+        float RandomValue = Random.Range(-0.1f, 0.1f);
+        Vector3 NewLocation = new Vector3(Camera.transform.position.x + RandomValue, Camera.transform.position.y + RandomValue, Camera.transform.position.z);
+        Camera.transform.position = NewLocation;
     }
 
     public void CameraZoomSet()
@@ -332,7 +377,7 @@ public class BossCharacter : MonoBehaviour
 
     void SetAttackPlace()
     {
-        if (bIsCameraMoving)
+        if (bIsPlatformMoving)
         {
             BattleObject.transform.Translate(Vector3.up * 0.1f);
             if (BattleObject.transform.position.y >= BattleObjTargetLocation.y)
@@ -380,8 +425,34 @@ public class BossCharacter : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int Damage)
+    public void TakeDamage(float Damage)
     {
-
+        CurrentHP -= Damage;
+        if (CurrentHP <= 0.0f)
+        {
+            Debug.Log("death");
+        }
+        else
+        {
+            StartCoroutine(CharacterShake());
+        }
     }
+
+    IEnumerator CharacterShake()
+    {
+        Vector3 BackupCurrentPos = transform.position;
+        InvokeRepeating("CharacterShaking", 0.0f, Time.deltaTime);
+        yield return new WaitForSeconds(0.3f);
+        CancelInvoke();
+        transform.position = BackupCurrentPos;
+    }
+
+    void CharacterShaking()
+    {
+        float RandomValue = Random.Range(-0.1f, 0.1f);
+        Vector3 NewLocation = new Vector3(transform.position.x + RandomValue, transform.position.y, transform.position.z);
+        transform.position = NewLocation;
+    }
+
+    
 }
