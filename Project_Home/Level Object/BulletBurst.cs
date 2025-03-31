@@ -20,7 +20,7 @@ public class BulletBurst : MonoBehaviour
         {
             if (collision.gameObject.layer == 11)
             {
-                collision.gameObject.GetComponent<BossCharacter>().TakeDamage(0.5f);
+                collision.gameObject.GetComponent<BossCharacter>().TakeDamage(2.5f);
             }
             Invoke("DestoryObj", 0.3f);
         }

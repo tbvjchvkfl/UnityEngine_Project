@@ -35,7 +35,7 @@ public class Bullet : MonoBehaviour
     {
         if (collision.gameObject.layer == 11)
         {
-            collision.gameObject.GetComponent<BossCharacter>().TakeDamage(1.0f);
+            collision.gameObject.GetComponent<BossCharacter>().TakeDamage(2.5f);
         }
         if (collision.gameObject.layer == 6)
         {
