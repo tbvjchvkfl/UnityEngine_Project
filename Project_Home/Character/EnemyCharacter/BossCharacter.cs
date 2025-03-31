@@ -11,12 +11,9 @@ public interface IBossCharacterState
 
 public class BossIdleState : IBossCharacterState
 {
-    float SkillDelayTime;
-    float NormalAttackDelay;
     public void EnterState(BossCharacter boss)
     {
-        NormalAttackDelay = boss.KickAttackDelay;
-        SkillDelayTime = boss.SkillDelayTime;
+        boss.MovementDirection = Vector2.zero;
     }
 
     public void ExcuteState(BossCharacter boss)
@@ -27,18 +24,24 @@ public class BossIdleState : IBossCharacterState
             float TargetDistance = Vector3.Distance(boss.TargetCharacter.transform.position, boss.transform.position);
             if (TargetDistance < 2.0f)
             {
-                NormalAttackDelay -= Time.deltaTime;
-                if (NormalAttackDelay <= 0.0f)
+                if (boss.bIsKickAttack)
                 {
                     boss.ModifyingState(new BossAttackState());
                 }
+                else
+                {
+                    boss.ModifyingState(new BossComboAttackState());
+                }
             }
-            else
+            if(TargetDistance >= 2.0f)
             {
-                SkillDelayTime -= Time.deltaTime;
-                if (SkillDelayTime <= 0)
+                if (boss.bIsSkillAttack)
                 {
                     boss.ModifyingState(new BossSkillState());
+                }
+                else
+                {
+                    boss.ModifyingState(new BossMoveState());
                 }
             }
         }
@@ -50,7 +53,45 @@ public class BossIdleState : IBossCharacterState
 
     public void ExitState(BossCharacter boss)
     {
-        NormalAttackDelay = 0.0f;
+    }
+}
+
+public class BossComboAttackState : IBossCharacterState
+{
+    BossCharacter Boss;
+
+    public void EnterState(BossCharacter boss)
+    {
+        Boss = boss;
+        boss.MovementDirection = Vector2.zero;
+        boss.AnimationController.SetTrigger("Punch Attack");
+        boss.StartCoroutine(PunchtoIdle());
+    }
+    public void ExcuteState(BossCharacter boss)
+    {
+    }
+    public void ExitState(BossCharacter boss)
+    {
+    }
+
+    IEnumerator PunchtoIdle()
+    {
+        yield return new WaitForSeconds(Boss.PunchAttack_A.length);
+        yield return new WaitForSeconds(Boss.PunchAttack_B.length);
+        yield return new WaitForSeconds(Boss.PunchAttack_C.length);
+        Collider2D HitEnemy = Physics2D.OverlapBox(Boss.SkillAttackSpace.bounds.center, Boss.SkillAttackSpace.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            float TargetDistance = Vector3.Distance(Boss.TargetCharacter.transform.position, Boss.transform.position);
+            if (TargetDistance < 2.0f)
+            {
+                Boss.ModifyingState(new BossIdleState());
+            }
+            else
+            {
+                Boss.ModifyingState(new BossSkillState());
+            }
+        }
     }
 }
 
@@ -62,6 +103,7 @@ public class BossAttackState : IBossCharacterState
     {
         Boss = boss;
         NormalAttack = boss.KickAttack;
+        boss.MovementDirection = Vector2.zero;
         boss.AnimationController.SetTrigger("Normal Attack");
         boss.StartCoroutine(NormalAttackTransition());
     }
@@ -73,12 +115,26 @@ public class BossAttackState : IBossCharacterState
 
     public void ExitState(BossCharacter boss)
     {
+        boss.bIsKickAttack = false;
     }
 
     IEnumerator NormalAttackTransition()
     {
         yield return new WaitForSeconds(NormalAttack.length);
-        Boss.ModifyingState(new BossIdleState());
+        Collider2D HitEnemy = Physics2D.OverlapBox(Boss.SkillAttackSpace.bounds.center, Boss.SkillAttackSpace.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (HitEnemy)
+        {
+            float TargetDistance = Vector3.Distance(Boss.TargetCharacter.transform.position, Boss.transform.position);
+            if (TargetDistance < 2.0f)
+            {
+                Boss.ModifyingState(new BossIdleState());
+            }
+            else
+            {
+                Boss.ModifyingState(new BossSkillState());
+            }
+        }
+        
     }
 }
 
@@ -123,17 +179,20 @@ public class BossSkillState : IBossCharacterState
         boss.bIsSkillAttack = false;
         boss.bIsCameraMoving = false;
         boss.bIsPlatformMoving = false;
+        boss.bIsSkillAttack = false;
     }
 
     IEnumerator SkillAttackAfterDelay()
     {
         Boss.bIsCameraMoving = true;
         yield return new WaitForSeconds(0.5f);
-        Boss.bIsPlatformMoving = true;
 
+        Boss.bIsPlatformMoving = true;
         yield return new WaitForSeconds(SkillAfterExcuteDelayTime);
+
         bIsSlampReady = false;
         Boss.AnimationController.SetBool("SlamReady", bIsSlampReady);
+
         yield return new WaitForSeconds(SlamptoIdle.length);
         Boss.ModifyingState(new BossIdleState());
     }
@@ -146,7 +205,7 @@ public class BossSkillState : IBossCharacterState
         bIsSlampReady = true;
         ExcuteDelayTime = boss.SkillExcuteDelayTime;
         AppearHeight = boss.AppearHeight;
-        boss.bIsSkillAttack = true;
+        boss.MovementDirection = Vector2.zero;
     }
 
     void CheckTargetLoc(BossCharacter boss)
@@ -156,11 +215,11 @@ public class BossSkillState : IBossCharacterState
         SkillNotice.transform.position = TargetLocation;
         if (boss.transform.position.x < boss.TargetCharacter.transform.position.x)
         {
-            SkillNotice.GetComponent<SpriteRenderer>().flipX = true;
+            SkillNotice.GetComponent<SpriteRenderer>().flipX = false;
         }
         else
         {
-            SkillNotice.GetComponent<SpriteRenderer>().flipX = false;
+            SkillNotice.GetComponent<SpriteRenderer>().flipX = true;
         }
     }
 }
@@ -178,7 +237,25 @@ public class BossMoveState : IBossCharacterState
         Collider2D HitEnemy = Physics2D.OverlapBox(boss.SkillAttackSpace.bounds.center, boss.SkillAttackSpace.bounds.size, 0.0f, LayerMask.GetMask("Player"));
         if (HitEnemy)
         {
-            boss.ModifyingState(new BossIdleState());
+            float TargetDistance = Vector3.Distance(boss.TargetCharacter.transform.position, boss.transform.position);
+            if (TargetDistance < 2.0f)
+            {
+                if (boss.bIsKickAttack)
+                {
+                    boss.ModifyingState(new BossAttackState());
+                }
+                else
+                {
+                    boss.ModifyingState(new BossComboAttackState());
+                }
+            }
+            if (TargetDistance >= 2.0f)
+            {
+                if (boss.bIsSkillAttack)
+                {
+                    boss.ModifyingState(new BossSkillState());
+                }
+            }
         }
     }
 
@@ -223,8 +300,11 @@ public class BossCharacter : MonoBehaviour
     public float SkillAfterExcuteDelayTime;
     public float PlatformMovingDistance;
     public float MoveSpeed;
-    public float MaxHP;
-    
+
+    public float FirstPhaseMaxHP;
+    public float SecondPhaseMaxHP;
+    public float ThirdPhaseMaxHP;
+
     public float KnockBackPower;
 
     [Header("Component Value")]
@@ -235,31 +315,46 @@ public class BossCharacter : MonoBehaviour
 
 
     [Header("Animation Clip")]
-    public AnimationClip PunchAttack;
+    public AnimationClip PunchAttack_A;
+    public AnimationClip PunchAttack_B;
+    public AnimationClip PunchAttack_C;
     public AnimationClip KickAttack;
     public AnimationClip GroundSlashAttack;
     public AnimationClip SlamptoIdle;
 
+    // Public Hide Value
     [HideInInspector] public Vector2 MovementDirection;
+
     [HideInInspector] public Animator AnimationController;
     [HideInInspector] public Rigidbody2D CharacterBody;
+
     [HideInInspector] public float CurrentHP;
+
     [HideInInspector] public bool bIsSkillAttack;
-    [HideInInspector] public bool bIsSlamReady;
+    [HideInInspector] public bool bIsKickAttack;
     [HideInInspector] public bool bIsCameraMoving;
     [HideInInspector] public bool bIsPlatformMoving;
+    [HideInInspector] public bool bIsFirstPhase;
+    [HideInInspector] public bool bIsMiddlePhase;
+    [HideInInspector] public bool bIsLastPhase;
+    [HideInInspector] public bool bIsMove;
+    
 
+    // Private Value
     IBossCharacterState BossState;
 
     SpriteRenderer SpriteRenderer;
     BoxCollider2D AttackPoint;
+
     Vector3 InitBattleObjectLocation;
     Vector3 BattleObjTargetLocation;
-
     Vector3 InitLeftClampingWallLocation;
     Vector3 InitRightClampingWallLocation;
     Vector3 LeftClampingTargetLocation;
     Vector3 RightClampingTargetLocation;
+
+    float SkillCooldown;
+    float KickCooldown;
 
     void Awake()
     {
@@ -268,6 +363,8 @@ public class BossCharacter : MonoBehaviour
         CharacterBody = GetComponent<Rigidbody2D>();
         BossState = new BossIdleState();
         BossState.EnterState(this);
+
+        Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("EnemyCharacter"));
 
         InitBattleObjectLocation = BattleObject.transform.position;
         BattleObjTargetLocation = new Vector3(InitBattleObjectLocation.x, InitBattleObjectLocation.y + PlatformMovingDistance, InitBattleObjectLocation.z);
@@ -278,11 +375,17 @@ public class BossCharacter : MonoBehaviour
         InitRightClampingWallLocation = RightClampingWall.transform.position;
         RightClampingTargetLocation = new Vector3(InitRightClampingWallLocation.x + RightWallMoveDistance, InitRightClampingWallLocation.y, InitRightClampingWallLocation.z);
 
-        CurrentHP = MaxHP;
+        SkillCooldown = SkillDelayTime;
+        KickCooldown = KickAttackDelay;
+
+        CurrentHP = FirstPhaseMaxHP;
+        bIsFirstPhase = true;
     }
 
     void Update()
     {
+        CheckAttackCooldown();
+        CheckCharacterMove();
         CheckTargetPosition();
         CameraZoomSet();
         SetAttackPlace();
@@ -317,6 +420,19 @@ public class BossCharacter : MonoBehaviour
             SpriteRenderer.flipX = false;
             AttackPoint = AttackForward;
         }
+    }
+
+    void CheckCharacterMove()
+    {
+        if (MovementDirection != Vector2.zero)
+        {
+            bIsMove = true;
+        }
+        else
+        {
+            bIsMove = false;
+        }
+        AnimationController.SetBool("Moving", bIsMove);
     }
 
     void AnimEventNormalAttack()
@@ -428,7 +544,19 @@ public class BossCharacter : MonoBehaviour
     public void TakeDamage(float Damage)
     {
         CurrentHP -= Damage;
-        if (CurrentHP <= 0.0f)
+        if (CurrentHP <= 0.0f && bIsFirstPhase)
+        {
+            bIsFirstPhase = false;
+            bIsMiddlePhase = true;
+            CurrentHP = SecondPhaseMaxHP;
+        }
+        else if (CurrentHP <= 0.0f && !bIsFirstPhase && bIsMiddlePhase)
+        {
+            bIsMiddlePhase = false;
+            bIsLastPhase = true;
+            CurrentHP = ThirdPhaseMaxHP;
+        }
+        else if (CurrentHP <= 0.0f && !bIsFirstPhase && !bIsMiddlePhase && bIsLastPhase)
         {
             Debug.Log("death");
         }
@@ -454,5 +582,25 @@ public class BossCharacter : MonoBehaviour
         transform.position = NewLocation;
     }
 
-    
+    void CheckAttackCooldown()
+    {
+        if (!bIsSkillAttack)
+        {
+            SkillCooldown -= Time.deltaTime;
+        }
+        if (!bIsKickAttack)
+        {
+            KickCooldown -= Time.deltaTime;
+        }
+        if(SkillCooldown <= 0.0f)
+        {
+            bIsSkillAttack = true;
+            SkillCooldown = SkillDelayTime;
+        }
+        if (KickCooldown <= 0.0f)
+        {
+            bIsKickAttack = true;
+            KickCooldown = KickAttackDelay;
+        }
+    }
 }
