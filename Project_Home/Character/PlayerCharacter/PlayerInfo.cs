@@ -48,7 +48,6 @@ public class PlayerInfo : MonoBehaviour
     {
         CheckStun();
 
-        
     }
 
     public void ApplyingHealthPoint()

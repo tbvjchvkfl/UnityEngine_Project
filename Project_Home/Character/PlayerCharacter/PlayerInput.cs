@@ -14,6 +14,7 @@ public class PlayerInput : MonoBehaviour
     public BoxCollider2D AttackBackward;
     public Camera ViewCamera;
     public BoxCollider2D CheckingFloor;
+    public GameObject BossCharacter;
 
     [Header("Player MovmentData")]
     public float MaxSpeed;
@@ -46,7 +47,9 @@ public class PlayerInput : MonoBehaviour
     Animator AnimationController;
     BoxCollider2D AttackPoint;
     GameObject InteractionObj;
+    GameObject CanonObj;
     PlayerInfo PlayerInfoData;
+
 
     // Movement Data
     Vector2 MovementDirection;
@@ -68,6 +71,8 @@ public class PlayerInput : MonoBehaviour
     bool bIsStun;
     bool bIsHit;
     bool bIsDeath;
+    bool bIsBossStage;
+    bool bIsCanonControll;
 
     public CapsuleCollider2D GetCharacterCapsule()
     {
@@ -86,7 +91,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnMove(InputValue inputValue)
     {
-        if (bIsRolling || bIsPowerJump || bIsSliding || bIsDuringGravity || bIsHit || bIsDeath || bIsStun)
+        if (bIsRolling || bIsPowerJump || bIsSliding || bIsDuringGravity || bIsHit || bIsDeath || bIsStun || bIsCanonControll)
         {
             return;
         }
@@ -148,7 +153,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnJump()
     {
-        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun)
+        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun || bIsCanonControll)
         {
             return;
         }
@@ -178,7 +183,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnDash()
     {
-        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun)
+        if (bIsInAir || bIsSliding || bIsHit || bIsDeath || bIsStun || bIsCanonControll)
         {
             return;
         }
@@ -191,7 +196,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnView(InputValue inputValue)
     {
-        if (bIsDeath)
+        if (bIsDeath || bIsCanonControll)
         {
             return;
         }
@@ -214,6 +219,12 @@ public class PlayerInput : MonoBehaviour
             InteractionObj.GetComponent<PlatformControl>().bIsInteracting = false;
             InteractionObj = null;
             SetInteractingMoving(false);
+        }
+        else if(bIsCanonControll)
+        {
+            InteractionObj.GetComponent<CanonController>().OnUnPossesController();
+            bIsCanonControll = InteractionObj.GetComponent<CanonController>().bIsControlled;
+            InteractionObj = null;
         }
         else
         {
@@ -277,6 +288,12 @@ public class PlayerInput : MonoBehaviour
                         bIsElevatorMove = R_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = true;
                         AnimationController.SetTrigger("GravityInteraction");
                     }
+                    if (R_Trace.collider.gameObject.tag == "CannonObj")
+                    {
+                        InteractionObj = R_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<CanonController>().OnPossesController();
+                        bIsCanonControll = InteractionObj.GetComponent<CanonController>().bIsControlled;
+                    }
                 }
                 else if (L_Trace)
                 {
@@ -300,6 +317,12 @@ public class PlayerInput : MonoBehaviour
                     {
                         bIsElevatorMove = L_Trace.collider.gameObject.GetComponentInParent<MovingElevator>().bIsInteraction = true;
                         AnimationController.SetTrigger("GravityInteraction");
+                    }
+                    if (L_Trace.collider.gameObject.tag == "CannonObj")
+                    {
+                        InteractionObj = L_Trace.collider.gameObject;
+                        InteractionObj.GetComponent<CanonController>().OnPossesController();
+                        bIsCanonControll = InteractionObj.GetComponent<CanonController>().bIsControlled;
                     }
                 }
             }
@@ -325,6 +348,18 @@ public class PlayerInput : MonoBehaviour
         CheckWall();
         CheckSliding();
         CameraInteraction();
+        CheckBossStage();
+        if (bIsCanonControll && !BossCharacter.GetComponent<BossCharacter>().bIsCameraMoving)
+        {
+            bIsCanonControll = false;
+            InteractionObj.GetComponent<CanonController>().OnUnPossesController();
+            InteractionObj = null;
+        }
+        if (bIsHit)
+        {
+            MovementDirection = Vector3.zero;
+            AnimationController.SetBool("Moving", false);
+        }
     }
 
     void FixedUpdate()
@@ -446,26 +481,29 @@ public class PlayerInput : MonoBehaviour
 
     void CameraInteraction()
     {
-        if (IsView)
+        if (!bIsBossStage)
         {
-            if (MovementDirection.y > 0)
+            if (IsView)
             {
-                ViewCamera.orthographicSize += Time.deltaTime * CameraZoomSpeed;
-                ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
+                if (MovementDirection.y > 0)
+                {
+                    ViewCamera.orthographicSize += Time.deltaTime * CameraZoomSpeed;
+                    ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
+                }
+                if (MovementDirection.y < 0)
+                {
+                    ViewCamera.orthographicSize -= Time.deltaTime * CameraZoomSpeed;
+                    ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
+                }
+                if (MovementDirection.y == 0)
+                {
+                    ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
+                }
             }
-            if (MovementDirection.y < 0)
-            {
-                ViewCamera.orthographicSize -= Time.deltaTime * CameraZoomSpeed;
-                ViewCamera.orthographicSize = Mathf.Clamp(ViewCamera.orthographicSize, MinCameraSize, MaxCameraSize);
-            }
-            if (MovementDirection.y == 0)
+            else
             {
                 ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
             }
-        }
-        else
-        {
-            ViewCamera.orthographicSize = Mathf.Lerp(ViewCamera.orthographicSize, 5.0f, Time.deltaTime * CameraInterpSpeed);
         }
     }
 
@@ -523,5 +561,17 @@ public class PlayerInput : MonoBehaviour
         bIsStun = PlayerInfoData.bIsStun;
         bIsHit = PlayerInfoData.bIsHit;
         bIsDeath = PlayerInfoData.bIsDeath;
+    }
+
+    void CheckBossStage()
+    {
+        if (BossCharacter)
+        {
+            bIsBossStage = true;
+        }
+        else
+        {
+            bIsBossStage = false;
+        }
     }
 }
