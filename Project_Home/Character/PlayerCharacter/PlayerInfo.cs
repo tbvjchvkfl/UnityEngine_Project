@@ -11,11 +11,10 @@ public class PlayerInfo : MonoBehaviour
     public GameObject EnemyCharacter;
 
     [Header("Basic Data")]
-    public int MaxHP;
     public float KnockBackDistance;
     public float StunTime;
+    public int CurrentHP;
 
-    [HideInInspector] public int CurrentHP;
     [HideInInspector] public int CurrentStageCount;
     [HideInInspector] public bool bIsStun;
     [HideInInspector] public bool bIsHit;
@@ -34,7 +33,6 @@ public class PlayerInfo : MonoBehaviour
 
     void Awake()
     {
-        CurrentHP = MaxHP;
         CharacterBody = GetComponent<Rigidbody2D>();
         AnimationController = GetComponent<Animator>();
     }
@@ -47,12 +45,12 @@ public class PlayerInfo : MonoBehaviour
     void Update()
     {
         CheckStun();
-
+        //Debug.Log(CurrentHP);
     }
 
     public void ApplyingHealthPoint()
     {
-        MaxHP += 1;
+        CurrentHP += 1;
     }
 
     public void TakeDamage(int Damage)
