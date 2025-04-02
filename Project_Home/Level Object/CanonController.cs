@@ -38,7 +38,7 @@ public class CanonController : MonoBehaviour
     public void OnPossesController()
     {
         bIsControlled = true;
-        BulletNum = CharacterInfo.MaxHP;
+        BulletNum = CharacterInfo.CurrentHP;
     }
 
     public void OnUnPossesController()
@@ -119,6 +119,7 @@ public class CanonController : MonoBehaviour
                     GameObject Bullet = Instantiate(CanonBullet);
                     Bullet.transform.position = MuzzleFlash.transform.position;
                     Bullet.GetComponent<Bullet>().BulletFire(BulletDirection, ShootingPower);
+                    BulletNum--;
                     ShootingPower = 0.0f;
                 }
             }
