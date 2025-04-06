@@ -4,28 +4,64 @@ using UnityEngine;
 
 public class HUD : MonoBehaviour
 {
-    public GameObject PlayerHUD;
-    public GameObject ScreenHUD;
-    public GameObject PauseMenu;
+    // Property
+    GameObject PlayerHUD;
+    GameObject PauseMenu;
 
-    bool bIsPause;
+    public bool bIsPause { get; set; }
 
-    void Start()
+    public static HUD Instance { get; private set; }
+    public PauseMenu PauseMenuInstance
     {
-        bIsPause = false;
-        if (PauseMenu)
+        get { return PauseMenu.GetComponent<PauseMenu>(); }
+    }
+
+
+    // Functionary
+    void Awake()
+    {
+        if (!Instance)
         {
-            PauseMenu.gameObject.SetActive(false);
+            Instance = this;
         }
         else
         {
-            PauseMenu = GameObject.FindGameObjectWithTag("Pause Menu");
+            Destroy(this.gameObject);
         }
+        DontDestroyOnLoad(this.gameObject);
+        InitUIObjects();
+    }
+
+    void Start()
+    {
     }
 
     void Update()
     {
-        
+        InitUIObjects();
+    }
+
+    void InitUIObjects()
+    {
+        if (!PauseMenu)
+        {
+            if (PauseMenu = GameObject.FindGameObjectWithTag("Pause Menu"))
+            {
+                PauseMenu.SetActive(false);
+                bIsPause = false;
+            }
+        }
+        if (!PlayerHUD)
+        {
+            if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
+            {
+                Debug.Log("Find");
+            }
+            else
+            {
+                Debug.Log("Null");
+            }
+        }
     }
 
     public void TogglePauseMenu()
@@ -35,6 +71,7 @@ public class HUD : MonoBehaviour
             if (PauseMenu)
             {
                 PauseMenu.SetActive(false);
+                PauseMenu.GetComponent<PauseMenu>().HideSettingMenu();
                 bIsPause = false;
                 Time.timeScale = 1.0f;
             }
@@ -44,6 +81,7 @@ public class HUD : MonoBehaviour
             if (PauseMenu)
             {
                 PauseMenu.SetActive(true);
+                PauseMenu.GetComponent<PauseMenu>().SetDefaultFocus();
                 bIsPause = true;
                 Time.timeScale = 0.0f;
             }
