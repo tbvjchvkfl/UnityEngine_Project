@@ -30,10 +30,13 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
-        GameObject CurrentFocusButton = EventSystem.current.currentSelectedGameObject;
-        Vector2 ArrowDirection = CurrentFocusButton.GetComponent<RectTransform>().position - DirectionArrow.GetComponent<RectTransform>().position;
-        float angle = Mathf.Atan2(ArrowDirection.y, ArrowDirection.x) * Mathf.Rad2Deg;
-        DirectionArrow.GetComponent<RectTransform>().rotation = Quaternion.Euler(0.0f, 0.0f, angle - 180.0f);
+        if (EventSystem.current.currentSelectedGameObject)
+        {
+            GameObject CurrentFocusButton = EventSystem.current.currentSelectedGameObject;
+            Vector2 ArrowDirection = CurrentFocusButton.GetComponent<RectTransform>().position - DirectionArrow.GetComponent<RectTransform>().position;
+            float angle = Mathf.Atan2(ArrowDirection.y, ArrowDirection.x) * Mathf.Rad2Deg;
+            DirectionArrow.GetComponent<RectTransform>().rotation = Quaternion.Euler(0.0f, 0.0f, angle - 180.0f);
+        }
     }
 
     public void SetDefaultFocus()
@@ -105,6 +108,7 @@ public class PauseMenu : MonoBehaviour
                     ControllBTN.gameObject.SetActive(false);
                     GraphicBTN.gameObject.SetActive(false);
                     SoundBTN.gameObject.SetActive(false);
+                    GraphicMenu.GetComponent<GraphicMenu>().SetDefaultUIFocus();
                 }
             }
         }

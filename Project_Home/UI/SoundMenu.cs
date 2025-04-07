@@ -17,9 +17,11 @@ public class SoundMenu : MonoBehaviour
     public TMP_Text BackGroundVolumeText;
     public TMP_Text SoundEffectVolumeText;
 
-    void Start()
+    void Awake()
     {
-        
+        AllVolume.onValueChanged.AddListener(OnChangedAllVolumeValue);
+        BackGroundVolume.onValueChanged.AddListener(OnChangedBackGroundVolumeValue);
+        SoundEffectVolume.onValueChanged.AddListener(OnChangedSoundEffectVolumeValue);
     }
 
     void Update()
@@ -38,12 +40,12 @@ public class SoundMenu : MonoBehaviour
     {
         if (EventSystem.current.currentSelectedGameObject == AllVolume.gameObject)
         {
-            AllVolumeSubjectText.color = Color.red;
+            AllVolumeSubjectText.color = Color.white;
             AllVolumeText.text = $"{Mathf.Round(AllVolume.value * 100.0f)}";
         }
         else
         {
-            AllVolumeSubjectText.color = Color.white;
+            AllVolumeSubjectText.color = Color.gray;
         }
     }
 
@@ -51,12 +53,12 @@ public class SoundMenu : MonoBehaviour
     {
         if (EventSystem.current.currentSelectedGameObject == BackGroundVolume.gameObject)
         {
-            BackGroundSubjectVolumeText.color = Color.red;
+            BackGroundSubjectVolumeText.color = Color.white;
             BackGroundVolumeText.text = $"{Mathf.Round(BackGroundVolume.value * 100.0f)}";
         }
         else
         {
-            BackGroundSubjectVolumeText.color = Color.white;
+            BackGroundSubjectVolumeText.color = Color.gray;
         }
     }
 
@@ -64,12 +66,27 @@ public class SoundMenu : MonoBehaviour
     {
         if (EventSystem.current.currentSelectedGameObject == SoundEffectVolume.gameObject)
         {
-            SoundEffectSubjectVolumeText.color = Color.red;
+            SoundEffectSubjectVolumeText.color = Color.white;
             SoundEffectVolumeText.text = $"{Mathf.Round(SoundEffectVolume.value * 100.0f)}";
         }
         else
         {
-            SoundEffectSubjectVolumeText.color = Color.white;
+            SoundEffectSubjectVolumeText.color = Color.gray;
         }
+    }
+
+    void OnChangedAllVolumeValue(float value)
+    {
+        AudioListener.volume = value;
+    }
+
+    void OnChangedBackGroundVolumeValue(float value)
+    {
+        AudioListener.volume = value;
+    }
+
+    void OnChangedSoundEffectVolumeValue(float value)
+    {
+        AudioListener.volume = value;
     }
 }
