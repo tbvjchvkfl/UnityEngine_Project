@@ -15,7 +15,6 @@ public class PlayerInfo : MonoBehaviour
     public float StunTime;
     public int CurrentHP;
 
-    [HideInInspector] public int CurrentStageCount;
     [HideInInspector] public bool bIsStun;
     [HideInInspector] public bool bIsHit;
     [HideInInspector] public bool bIsDeath;
@@ -23,6 +22,9 @@ public class PlayerInfo : MonoBehaviour
     [Header("Animation Data")]
     public AnimationClip HitAnim;
     public AnimationClip DeathAnim;
+
+    [Header("Script")]
+    public PlayerHUD PlayerCharacterHUD;
 
     // ====================================
     //          - Private Data-
@@ -39,23 +41,18 @@ public class PlayerInfo : MonoBehaviour
 
     void Start()
     {
-        
+        GetGameManagerData();
     }
 
     void Update()
     {
         CheckStun();
-        //Debug.Log(CurrentHP);
-    }
-
-    public void ApplyingHealthPoint()
-    {
-        CurrentHP += 1;
     }
 
     public void TakeDamage(int Damage)
     {
         CurrentHP -= Damage;
+        GameManager.Instance.SetPlayerHP(Damage);
         bIsHit = true;
 
         if (CurrentHP <= 0)
@@ -93,5 +90,10 @@ public class PlayerInfo : MonoBehaviour
             }
         }
         AnimationController.SetBool("Stun", bIsStun);
+    }
+
+    public void GetGameManagerData()
+    {
+        CurrentHP = GameManager.Instance.PlayerHP;
     }
 }
