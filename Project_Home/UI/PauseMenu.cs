@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,12 +12,18 @@ public class PauseMenu : MonoBehaviour
     public GameObject GraphicMenu;
     public GameObject SoundMenu;
     public GameObject DirectionArrow;
+
     public Button ContinueBTN;
     public Button SettingBTN;
     public Button ExitBTN;
     public Button ControllBTN;
     public Button GraphicBTN;
     public Button SoundBTN;
+
+    public TMP_Text ContinueText;
+    public TMP_Text SettingText;
+    public TMP_Text ExitText;
+
 
     public bool bIsSettingMenu {  get; private set; }
     public bool bIsControllMenu { get; private set; }
@@ -35,6 +42,45 @@ public class PauseMenu : MonoBehaviour
             Vector2 ArrowDirection = CurrentFocusButton.GetComponent<RectTransform>().position - DirectionArrow.GetComponent<RectTransform>().position;
             float angle = Mathf.Atan2(ArrowDirection.y, ArrowDirection.x) * Mathf.Rad2Deg;
             DirectionArrow.GetComponent<RectTransform>().rotation = Quaternion.Euler(0.0f, 0.0f, angle - 180.0f);
+        }
+        OnFocusContinueButton();
+        OnFocusSettingButton();
+        OnFocusExitButton();
+    }
+
+    void OnFocusContinueButton()
+    {
+        if (EventSystem.current.currentSelectedGameObject == ContinueBTN.gameObject)
+        {
+            ContinueText.color = Color.black;
+        }
+        else
+        {
+            ContinueText.color = Color.white;
+        }
+    }
+
+    void OnFocusSettingButton()
+    {
+        if (EventSystem.current.currentSelectedGameObject == SettingBTN.gameObject)
+        {
+            SettingText.color = Color.black;
+        }
+        else
+        {
+            SettingText.color = Color.white;
+        }
+    }
+
+    void OnFocusExitButton()
+    {
+        if (EventSystem.current.currentSelectedGameObject == ExitBTN.gameObject)
+        {
+            ExitText.color = Color.black;
+        }
+        else
+        {
+            ExitText.color = Color.white;
         }
     }
 
