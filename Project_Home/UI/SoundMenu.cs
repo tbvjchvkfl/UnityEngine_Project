@@ -82,11 +82,11 @@ public class SoundMenu : MonoBehaviour
 
     void OnChangedBackGroundVolumeValue(float value)
     {
-        AudioListener.volume = value;
+        SoundManager.Instance.SetBackGroundValue(value);
     }
 
     void OnChangedSoundEffectVolumeValue(float value)
     {
-        AudioListener.volume = value;
+        SoundManager.Instance.SetSoundEffectValue(value);
     }
 }

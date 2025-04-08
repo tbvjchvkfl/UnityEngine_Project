@@ -15,9 +15,11 @@ public class HUD : MonoBehaviour
     {
         get { return PauseMenu.GetComponent<PauseMenu>(); }
     }
+    public PlayerHUD PlayerHealthBar
+    {
+        get { return PlayerHUD.GetComponent<PlayerHUD>(); }
+    }
 
-
-    // Functionary
     void Awake()
     {
         if (!Instance)
@@ -29,16 +31,15 @@ public class HUD : MonoBehaviour
             Destroy(this.gameObject);
         }
         DontDestroyOnLoad(this.gameObject);
-        InitUIObjects();
     }
 
     void Start()
     {
+        InitUIObjects();
     }
 
     void Update()
     {
-        InitUIObjects();
     }
 
     void InitUIObjects()
@@ -55,11 +56,7 @@ public class HUD : MonoBehaviour
         {
             if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
             {
-                Debug.Log("Find");
-            }
-            else
-            {
-                Debug.Log("Null");
+                PlayerHealthBar.ShowPlayerUI();
             }
         }
     }

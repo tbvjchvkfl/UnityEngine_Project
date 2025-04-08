@@ -22,7 +22,6 @@ public class PauseMenu : MonoBehaviour
     public bool bIsControllMenu { get; private set; }
     public bool bIsGraphicMenu { get; private set; }
     public bool bIsSoundMenu { get; private set; }
-    float CurrentAngle;
 
     void Start()
     {
