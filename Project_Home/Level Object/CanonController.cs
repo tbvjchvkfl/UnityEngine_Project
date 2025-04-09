@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,10 +14,16 @@ public class CanonController : MonoBehaviour
     public float RotationSpeed;
     public float PowerWeight;
 
-    [HideInInspector] public bool bIsControlled;
+    public GameObject InterHelpUI;
+    public GameObject BulletUI;
+    public TMP_Text BulletText;
+
+    public int BulletNum { get; private set; }
+    public bool bIsControlled { get; private set; }
 
     PlayerInfo CharacterInfo;
-    int BulletNum;
+    PlayerInput CharacterInput;
+
     float ShootingPower;
     List<GameObject> TrajectoryDots;
     Vector3 BulletDirection;
@@ -24,6 +31,7 @@ public class CanonController : MonoBehaviour
     void Awake()
     {
         CharacterInfo = PlayerCharacter.GetComponent<PlayerInfo>();
+        CharacterInput = PlayerCharacter.GetComponent<PlayerInput>();
         MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
         TrajectoryDots = new List<GameObject>();
     }
@@ -33,6 +41,7 @@ public class CanonController : MonoBehaviour
         SetEssentialData();
         SetCanonInput();
         FireCanon();
+        SetConnonUI();
     }
 
     public void OnPossesController()
@@ -100,7 +109,7 @@ public class CanonController : MonoBehaviour
 
     void FireCanon()
     {
-        if (bIsControlled)
+        if (bIsControlled && BulletNum > 0)
         {
             if (Input.GetKeyDown(KeyCode.X))
             {
@@ -112,16 +121,13 @@ public class CanonController : MonoBehaviour
             }
             else if (Input.GetKeyUp(KeyCode.X))
             {
-                if (BulletNum > 0)
-                {
-                    HideTrajectory();
-                    SetMuzzleFlashVisibilty();
-                    GameObject Bullet = Instantiate(CanonBullet);
-                    Bullet.transform.position = MuzzleFlash.transform.position;
-                    Bullet.GetComponent<Bullet>().BulletFire(BulletDirection, ShootingPower);
-                    BulletNum--;
-                    ShootingPower = 0.0f;
-                }
+                HideTrajectory();
+                SetMuzzleFlashVisibilty();
+                GameObject Bullet = Instantiate(CanonBullet);
+                Bullet.transform.position = MuzzleFlash.transform.position;
+                Bullet.GetComponent<Bullet>().BulletFire(BulletDirection, ShootingPower);
+                BulletNum--;
+                ShootingPower = 0.0f;
             }
         }
     }
@@ -168,5 +174,27 @@ public class CanonController : MonoBehaviour
     void InvisibleMuzzleFlash()
     {
         MuzzleFlash.GetComponent<SpriteRenderer>().color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+    }
+
+    void SetConnonUI()
+    {
+        if (bIsControlled)
+        {
+            InterHelpUI.SetActive(false);
+            BulletUI.SetActive(true);
+        }
+        else
+        {
+            InterHelpUI.SetActive(true);
+            BulletUI.SetActive(false);
+        }
+        if (BulletNum > 0)
+        {
+            BulletText.text = $"{BulletNum}";
+        }
+        else
+        {
+            BulletText.text = "EMPTY";
+        }
     }
 }
