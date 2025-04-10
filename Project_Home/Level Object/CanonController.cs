@@ -47,12 +47,13 @@ public class CanonController : MonoBehaviour
     public void OnPossesController()
     {
         bIsControlled = true;
-        BulletNum = CharacterInfo.CurrentHP;
+        BulletNum = CharacterInfo.PocketItem;
     }
 
     public void OnUnPossesController()
     {
         bIsControlled = false;
+        CharacterInfo.RefreshPocketItem();
         HideTrajectory();
     }
 
@@ -128,6 +129,7 @@ public class CanonController : MonoBehaviour
                 Bullet.GetComponent<Bullet>().BulletFire(BulletDirection, ShootingPower);
                 BulletNum--;
                 ShootingPower = 0.0f;
+                CharacterInfo.RemovePocketItem();
             }
         }
     }
