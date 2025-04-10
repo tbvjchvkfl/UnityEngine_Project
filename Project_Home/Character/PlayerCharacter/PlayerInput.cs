@@ -91,17 +91,14 @@ public class PlayerInput : MonoBehaviour
         CameraInteraction();
         CheckBossStage();
         SetMovingDirection();
-        if (bIsCanonControll && !BossCharacter.GetComponent<BossCharacter>().bIsCameraMoving)
-        {
-            bIsCanonControll = false;
-            InteractionObj.GetComponent<CanonController>().OnUnPossesController();
-            InteractionObj = null;
-        }
+        CancelCannonControll();
     }
+
+    
 
     void FixedUpdate()
     {
-        if (!bIsRolling || !bIsPowerJump || !bIsSliding || !bIsHit || !bIsDeath || !bIsStun)
+        if (!bIsRolling && !bIsPowerJump && !bIsSliding && !bIsHit && !bIsDeath && !bIsStun)
         {
             ModifyMoveSpeedbyInteraction();
             if (bIsInverseGravity && CharacterBody.gravityScale < 0.0f)
@@ -182,7 +179,7 @@ public class PlayerInput : MonoBehaviour
 
     void SetMovingDirection()
     {
-        if (!HUD.Instance.bIsPause)
+        if (!HUD.Instance.bIsPause && !GameManager.Instance.bIsGameOver)
         {
             if (bIsHit)
             {
@@ -364,7 +361,7 @@ public class PlayerInput : MonoBehaviour
             MovementDirection = Vector2.zero;
             return;
         }
-        if (!bIsRolling || !bIsPowerJump || !bIsSliding || !bIsDuringGravity || !bIsHit || !bIsDeath || !bIsStun || !bIsCanonControll)
+        if (!bIsRolling && !bIsPowerJump && !bIsSliding && !bIsDuringGravity && !bIsHit && !bIsDeath && !bIsStun && !bIsCanonControll)
         {
             MovementDirection = inputValue.Get<Vector2>();
 
@@ -399,7 +396,7 @@ public class PlayerInput : MonoBehaviour
             StartCoroutine(DoPowerJump());
             return;
         }
-        if (!bIsInAir || !bIsSliding || !bIsHit || !bIsDeath || !bIsStun || !bIsCanonControll || !bIsInteraction || !bIsPowerJump)
+        if (!bIsInAir && !bIsSliding && !bIsHit && !bIsDeath && !bIsStun && !bIsCanonControll && !bIsInteraction && !bIsPowerJump)
         {
             if (bIsInverseGravity)
             {
@@ -417,7 +414,7 @@ public class PlayerInput : MonoBehaviour
 
     public void OnDash()
     {
-        if (!bIsInAir || !bIsSliding || !bIsHit || !bIsDeath || !bIsStun || !bIsCanonControll)
+        if (!bIsInAir && !bIsSliding && !bIsHit && !bIsDeath && !bIsStun && !bIsCanonControll)
         {
             if (bIsInteraction)
             {
@@ -526,33 +523,35 @@ public class PlayerInput : MonoBehaviour
         bool SelectScreenModeMenu = HUD.Instance.PauseMenuInstance.GraphicMenu.GetComponent<GraphicMenu>().bIsScreenMode;
         bool SelectResolutionSetMenu = HUD.Instance.PauseMenuInstance.GraphicMenu.GetComponent<GraphicMenu>().bIsResolutionSet;
 
-
-        if (ShowingSettingMenu && !ShowingControlMenu && !ShowingGraphicMenu && !ShowingSoundMenu)
+        if (!HUD.Instance.GameOverUI.bIsGameOver)
         {
-            HUD.Instance.PauseMenuInstance.HideSettingMenu();
-        }
-        else if (ShowingSettingMenu && ShowingControlMenu)
-        {
-            HUD.Instance.PauseMenuInstance.HideControlMenu();
-        }
-        else if(ShowingSettingMenu && ShowingGraphicMenu)
-        {
-            if (SelectScreenModeMenu || SelectResolutionSetMenu)
+            if (ShowingSettingMenu && !ShowingControlMenu && !ShowingGraphicMenu && !ShowingSoundMenu)
             {
-                HUD.Instance.PauseMenuInstance.GraphicMenu.GetComponent<GraphicMenu>().UnSelectedCancel();
+                HUD.Instance.PauseMenuInstance.HideSettingMenu();
+            }
+            else if (ShowingSettingMenu && ShowingControlMenu)
+            {
+                HUD.Instance.PauseMenuInstance.HideControlMenu();
+            }
+            else if (ShowingSettingMenu && ShowingGraphicMenu)
+            {
+                if (SelectScreenModeMenu || SelectResolutionSetMenu)
+                {
+                    HUD.Instance.PauseMenuInstance.GraphicMenu.GetComponent<GraphicMenu>().UnSelectedCancel();
+                }
+                else
+                {
+                    HUD.Instance.PauseMenuInstance.HideGraphicMenu();
+                }
+            }
+            else if (ShowingSettingMenu && ShowingSoundMenu)
+            {
+                HUD.Instance.PauseMenuInstance.HideSoundMenu();
             }
             else
             {
-                HUD.Instance.PauseMenuInstance.HideGraphicMenu();
+                HUD.Instance.TogglePauseMenu();
             }
-        }
-        else if(ShowingSettingMenu && ShowingSoundMenu)
-        {
-            HUD.Instance.PauseMenuInstance.HideSoundMenu();
-        }
-        else
-        {
-            HUD.Instance.TogglePauseMenu();
         }
     }
 
@@ -569,5 +568,15 @@ public class PlayerInput : MonoBehaviour
     void PlayLandingSound()
     {
         SoundManager.Instance.PlayLandingSound();
+    }
+
+    void CancelCannonControll()
+    {
+        if (bIsCanonControll && !BossCharacter.GetComponent<BossCharacter>().bIsCameraMoving)
+        {
+            bIsCanonControll = false;
+            InteractionObj.GetComponent<CanonController>().OnUnPossesController();
+            InteractionObj = null;
+        }
     }
 }

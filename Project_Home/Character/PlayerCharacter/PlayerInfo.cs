@@ -9,11 +9,16 @@ public class PlayerInfo : MonoBehaviour
     // ====================================
     [Header("Component")]
     public GameObject EnemyCharacter;
+    public GameObject BulletPocketUI;
+    public GameObject BulletItem_0;
+    public GameObject BulletItem_1;
+    public GameObject BulletItem_2;
 
     [Header("Basic Data")]
     public float KnockBackDistance;
     public float StunTime;
-    public int CurrentHP;
+    public int CurrentHP { get; private set; }
+    public int PocketItem {  get; private set; }
 
     [HideInInspector] public bool bIsStun;
     [HideInInspector] public bool bIsHit;
@@ -22,9 +27,6 @@ public class PlayerInfo : MonoBehaviour
     [Header("Animation Data")]
     public AnimationClip HitAnim;
     public AnimationClip DeathAnim;
-
-    [Header("Script")]
-    public PlayerHUD PlayerCharacterHUD;
 
     // ====================================
     //          - Private Data-
@@ -47,6 +49,8 @@ public class PlayerInfo : MonoBehaviour
     void Update()
     {
         CheckStun();
+        ShowAndHideBulletPocketUI();
+        ModifyBulletUI();
     }
 
     public void TakeDamage(int Damage)
@@ -57,7 +61,12 @@ public class PlayerInfo : MonoBehaviour
 
         if (CurrentHP <= 0)
         {
+            CurrentHP = 0;
             AnimationController.SetTrigger("Die");
+            if (GameManager.Instance.bIsGameOver)
+            {
+                StartCoroutine(ShowGameOverUI());
+            }
         }
         else
         {
@@ -72,6 +81,12 @@ public class PlayerInfo : MonoBehaviour
             AnimationController.SetTrigger("Hit");
             Invoke("ReturnHitStateValue", HitAnim.length);
         }
+    }
+
+    IEnumerator ShowGameOverUI()
+    {
+        yield return new WaitForSeconds(DeathAnim.length);
+        HUD.Instance.ShowGameOverUI();
     }
 
     void ReturnHitStateValue()
@@ -95,5 +110,66 @@ public class PlayerInfo : MonoBehaviour
     public void GetGameManagerData()
     {
         CurrentHP = GameManager.Instance.PlayerHP;
+    }
+
+    public void RefreshPocketItem()
+    {
+        PocketItem = 0;
+    }
+
+    public void AddPocketItem()
+    {
+        PocketItem++;
+    }
+
+    public void RemovePocketItem()
+    {
+        PocketItem--;
+    }
+
+    void ModifyBulletUI()
+    {
+        if (PocketItem == 0)
+        {
+            BulletItem_0.SetActive(false);
+            BulletItem_1.SetActive(false);
+            BulletItem_2.SetActive(false);
+        }
+        if (PocketItem == 1)
+        {
+            BulletItem_0.SetActive(true);
+            BulletItem_1.SetActive(false);
+            BulletItem_2.SetActive(false);
+        }
+        else if (PocketItem == 2)
+        {
+            BulletItem_0.SetActive(true);
+            BulletItem_1.SetActive(true);
+            BulletItem_2.SetActive(false);
+        }
+        else if (PocketItem == 3)
+        {
+            BulletItem_0.SetActive(true);
+            BulletItem_1.SetActive(true);
+            BulletItem_2.SetActive(true);
+        }
+    }
+
+    void ShowAndHideBulletPocketUI()
+    {
+        if (EnemyCharacter)
+        {
+            if (EnemyCharacter.GetComponent<BossCharacter>().bIsCameraMoving)
+            {
+                BulletPocketUI.SetActive(true);
+            }
+            else
+            {
+                BulletPocketUI.SetActive(false);
+                BulletItem_0.SetActive(false);
+                BulletItem_1.SetActive(false);
+                BulletItem_2.SetActive(false);
+            }
+        }
     }
 }
