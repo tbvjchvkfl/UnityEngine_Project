@@ -46,6 +46,10 @@ public class PlayerHUD : MonoBehaviour
             MAXText.enabled = true;
             MAXText.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
         }
+        else
+        {
+            MAXText.enabled = false;
+        }
     }
 
     void HidePlayerUI()

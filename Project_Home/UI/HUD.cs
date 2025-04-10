@@ -7,6 +7,7 @@ public class HUD : MonoBehaviour
     // Property
     GameObject PlayerHUD;
     GameObject PauseMenu;
+    GameObject GameOver;
 
     public bool bIsPause { get; set; }
 
@@ -18,6 +19,10 @@ public class HUD : MonoBehaviour
     public PlayerHUD PlayerHealthBar
     {
         get { return PlayerHUD.GetComponent<PlayerHUD>(); }
+    }
+    public GameOverMenu GameOverUI
+    {
+        get { return GameOver.GetComponent<GameOverMenu>(); }
     }
 
     void Awake()
@@ -40,6 +45,7 @@ public class HUD : MonoBehaviour
 
     void Update()
     {
+        InitUIObjects();
     }
 
     void InitUIObjects()
@@ -57,6 +63,13 @@ public class HUD : MonoBehaviour
             if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
             {
                 PlayerHealthBar.ShowPlayerUI();
+            }
+        }
+        if (!GameOver)
+        {
+            if (GameOver = GameObject.FindGameObjectWithTag("GameOver Menu"))
+            {
+                GameOver.SetActive(false);
             }
         }
     }
@@ -83,5 +96,12 @@ public class HUD : MonoBehaviour
                 Time.timeScale = 0.0f;
             }
         }
+    }
+
+    public void ShowGameOverUI()
+    {
+        GameOver.SetActive(true);
+        GameOverUI.bIsGameOver = true;
+        Time.timeScale = 0.0f;
     }
 }
