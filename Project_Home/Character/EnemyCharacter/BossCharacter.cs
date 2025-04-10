@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 
 public interface IBossCharacterState
 {
@@ -92,6 +94,10 @@ public class BossComboAttackState : IBossCharacterState
                 Boss.ModifyingState(new BossSkillState());
             }
         }
+        else
+        {
+            Boss.ModifyingState(new BossIdleState());
+        }
     }
 }
 
@@ -110,7 +116,6 @@ public class BossAttackState : IBossCharacterState
 
     public void ExcuteState(BossCharacter boss)
     {
-        
     }
 
     public void ExitState(BossCharacter boss)
@@ -134,7 +139,10 @@ public class BossAttackState : IBossCharacterState
                 Boss.ModifyingState(new BossSkillState());
             }
         }
-        
+        else
+        {
+            Boss.ModifyingState(new BossIdleState());
+        }
     }
 }
 
@@ -179,7 +187,7 @@ public class BossSkillState : IBossCharacterState
         boss.bIsSkillAttack = false;
         boss.bIsCameraMoving = false;
         boss.bIsPlatformMoving = false;
-        boss.bIsSkillAttack = false;
+        boss.DestoryCannonBullet();
     }
 
     IEnumerator SkillAttackAfterDelay()
@@ -282,8 +290,7 @@ public class BossCharacter : MonoBehaviour
 {
     [Header("GameObject")]
     public GameObject TargetCharacter;
-    public BoxCollider2D AttackForward;
-    public BoxCollider2D AttackBackward;
+    public BoxCollider2D MeleeAttackSpace;
     public BoxCollider2D SkillAttackSpace;
     public BoxCollider2D SkillAttackPoint;
     public GameObject SkillNotice;
@@ -291,6 +298,10 @@ public class BossCharacter : MonoBehaviour
     public GameObject BattleObject;
     public GameObject LeftClampingWall;
     public GameObject RightClampingWall;
+
+    public GameObject BulletSpawnPoint;
+    public GameObject CannonBullet;
+
 
     [Header("Boss State Value")]
     public float KickAttackDelay;
@@ -344,7 +355,6 @@ public class BossCharacter : MonoBehaviour
     IBossCharacterState BossState;
 
     SpriteRenderer SpriteRenderer;
-    BoxCollider2D AttackPoint;
 
     Vector3 InitBattleObjectLocation;
     Vector3 BattleObjTargetLocation;
@@ -356,11 +366,14 @@ public class BossCharacter : MonoBehaviour
     float SkillCooldown;
     float KickCooldown;
 
+    List<GameObject> BulletPocket;
+
     void Awake()
     {
         AnimationController = GetComponent<Animator>();
         SpriteRenderer = GetComponent<SpriteRenderer>();
         CharacterBody = GetComponent<Rigidbody2D>();
+        BulletPocket = new List<GameObject>();
         BossState = new BossIdleState();
         BossState.EnterState(this);
 
@@ -393,17 +406,6 @@ public class BossCharacter : MonoBehaviour
         BossState.ExcuteState(this);
     }
 
-    public void ModifyingState(IBossCharacterState NewState)
-    {
-        if (BossState.ToString() == NewState.ToString())
-        {
-            return;
-        }
-        BossState.ExitState(this);
-        BossState = NewState;
-        BossState.EnterState(this);
-    }
-
     void CheckTargetPosition()
     {
         if (bIsSkillAttack)
@@ -413,12 +415,10 @@ public class BossCharacter : MonoBehaviour
         if (TargetCharacter.gameObject.transform.position.x < transform.position.x)
         {
             SpriteRenderer.flipX = true;
-            AttackPoint = AttackBackward;
         }
         else if (TargetCharacter.gameObject.transform.position.x > transform.position.x)
         {
             SpriteRenderer.flipX = false;
-            AttackPoint = AttackForward;
         }
     }
 
@@ -437,8 +437,8 @@ public class BossCharacter : MonoBehaviour
 
     void AnimEventNormalAttack()
     {
-        Collider2D AttackCollision = Physics2D.OverlapBox(AttackPoint.bounds.center, AttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
-        if (AttackCollision)
+        Collider2D AttackCollision = Physics2D.OverlapBox(MeleeAttackSpace.bounds.center, MeleeAttackSpace.bounds.size, 0.0f, LayerMask.GetMask("Player"));
+        if (AttackCollision && !GameManager.Instance.PCInput.bIsRolling)
         {
             AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
         }
@@ -446,9 +446,10 @@ public class BossCharacter : MonoBehaviour
 
     void AnimEventSkillAttack()
     {
+        SpawnCannonBullet();
         StartCoroutine(CameraShake());
         Collider2D AttackCollision = Physics2D.OverlapBox(SkillAttackPoint.bounds.center, SkillAttackPoint.bounds.size, 0.0f, LayerMask.GetMask("Player"));
-        if (AttackCollision)
+        if (AttackCollision && !GameManager.Instance.PCInput.bIsRolling)
         {
             AttackCollision.gameObject.GetComponent<PlayerInfo>().bIsStun = true;
             AttackCollision.gameObject.GetComponent<PlayerInfo>().TakeDamage(1);
@@ -469,26 +470,6 @@ public class BossCharacter : MonoBehaviour
         float RandomValue = Random.Range(-0.1f, 0.1f);
         Vector3 NewLocation = new Vector3(Camera.transform.position.x + RandomValue, Camera.transform.position.y + RandomValue, Camera.transform.position.z);
         Camera.transform.position = NewLocation;
-    }
-
-    public void CameraZoomSet()
-    {
-        if (Camera && bIsCameraMoving)
-        {
-            Camera.GetComponent<Camera>().orthographicSize += Time.deltaTime * CameraZoomSpeed;
-            if (Camera.GetComponent<Camera>().orthographicSize >= 10.0f)
-            {
-                Camera.GetComponent<Camera>().orthographicSize = 10.0f;
-            }
-        }
-        if (Camera && !bIsCameraMoving)
-        {
-            Camera.GetComponent<Camera>().orthographicSize -= Time.deltaTime * CameraZoomSpeed;
-            if (Camera.GetComponent<Camera>().orthographicSize <= 5.0f)
-            {
-                Camera.GetComponent<Camera>().orthographicSize = 5.0f;
-            }
-        }
     }
 
     void SetAttackPlace()
@@ -541,31 +522,6 @@ public class BossCharacter : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float Damage)
-    {
-        CurrentHP -= Damage;
-        if (CurrentHP <= 0.0f && bIsFirstPhase)
-        {
-            bIsFirstPhase = false;
-            bIsMiddlePhase = true;
-            CurrentHP = SecondPhaseMaxHP;
-        }
-        else if (CurrentHP <= 0.0f && !bIsFirstPhase && bIsMiddlePhase)
-        {
-            bIsMiddlePhase = false;
-            bIsLastPhase = true;
-            CurrentHP = ThirdPhaseMaxHP;
-        }
-        else if (CurrentHP <= 0.0f && !bIsFirstPhase && !bIsMiddlePhase && bIsLastPhase)
-        {
-            Debug.Log("death");
-        }
-        else
-        {
-            StartCoroutine(CharacterShake());
-        }
-    }
-
     IEnumerator CharacterShake()
     {
         Vector3 BackupCurrentPos = transform.position;
@@ -602,5 +558,84 @@ public class BossCharacter : MonoBehaviour
             bIsKickAttack = true;
             KickCooldown = KickAttackDelay;
         }
+    }
+
+    public void ModifyingState(IBossCharacterState NewState)
+    {
+        if (BossState.ToString() == NewState.ToString())
+        {
+            return;
+        }
+        BossState.ExitState(this);
+        BossState = NewState;
+        BossState.EnterState(this);
+    }
+
+    public void CameraZoomSet()
+    {
+        if (Camera && bIsCameraMoving)
+        {
+            Camera.GetComponent<Camera>().orthographicSize += Time.deltaTime * CameraZoomSpeed;
+            if (Camera.GetComponent<Camera>().orthographicSize >= 10.0f)
+            {
+                Camera.GetComponent<Camera>().orthographicSize = 10.0f;
+            }
+        }
+        if (Camera && !bIsCameraMoving)
+        {
+            Camera.GetComponent<Camera>().orthographicSize -= Time.deltaTime * CameraZoomSpeed;
+            if (Camera.GetComponent<Camera>().orthographicSize <= 5.0f)
+            {
+                Camera.GetComponent<Camera>().orthographicSize = 5.0f;
+            }
+        }
+    }
+
+    public void TakeDamage(float Damage)
+    {
+        CurrentHP -= Damage;
+        if (CurrentHP <= 0.0f && bIsFirstPhase)
+        {
+            bIsFirstPhase = false;
+            bIsMiddlePhase = true;
+            CurrentHP = SecondPhaseMaxHP;
+        }
+        else if (CurrentHP <= 0.0f && !bIsFirstPhase && bIsMiddlePhase)
+        {
+            bIsMiddlePhase = false;
+            bIsLastPhase = true;
+            CurrentHP = ThirdPhaseMaxHP;
+        }
+        else if (CurrentHP <= 0.0f && !bIsFirstPhase && !bIsMiddlePhase && bIsLastPhase)
+        {
+            Debug.Log("death");
+        }
+        else
+        {
+            StartCoroutine(CharacterShake());
+        }
+    }
+
+    public void SpawnCannonBullet()
+    {
+        for (int i = 0; i < GameManager.Instance.PCInfo.CurrentHP; i++)
+        {
+            GameObject Bullet = GameObject.Instantiate(CannonBullet);
+            BulletPocket.Add(Bullet);
+            float RandomValue = Random.Range(-6.0f, 6.0f);
+            Bullet.transform.position = new Vector3(BulletSpawnPoint.transform.position.x + RandomValue, BulletSpawnPoint.transform.position.y, BulletSpawnPoint.transform.position.z);
+        }
+    }
+
+    public void DestoryCannonBullet()
+    {
+        foreach (var PocItem in BulletPocket)
+        {
+            if (PocItem)
+            {
+                Destroy(PocItem.gameObject);
+            }
+        }
+        BulletPocket.Clear();
     }
 }
