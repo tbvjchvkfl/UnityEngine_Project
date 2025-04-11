@@ -5,20 +5,9 @@ public class HeartObject : MonoBehaviour
     [Header("Essential Data")]
     public float RotationSpeed;
 
-
-    void Awake()
-    {
-        
-    }
-
-    void Start()
-    {
-        
-    }
-
     void Update()
     {
-        transform.Rotate(new Vector3(0.0f, 0.0f, RotationSpeed* Time.deltaTime));
+        transform.Rotate(new Vector3(0.0f, 0.0f, RotationSpeed * Time.deltaTime));
         if (transform.rotation.z >= 360.0f)
         {
             transform.rotation = Quaternion.identity;
@@ -29,7 +18,7 @@ public class HeartObject : MonoBehaviour
     {
         if (collision.gameObject.layer == 3)
         {
-            collision.gameObject.GetComponent<PlayerInfo>().CurrentStageCount++;
+            GameManager.Instance.ApplyPlayerHP();
             Destroy(gameObject);
         }
     }

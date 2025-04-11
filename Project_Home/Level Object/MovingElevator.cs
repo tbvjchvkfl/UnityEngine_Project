@@ -2,13 +2,14 @@ using UnityEngine;
 
 public class MovingElevator : MonoBehaviour
 {
-    public float TargetPositionValue;
+
     public GameObject ElevatorDoor;
+
+    public float TargetPositionValue;
 
     [HideInInspector] public bool bIsInteraction;
 
     Transform ObjTransform;
-    Transform TargetTransform;
     Transform DoorTransform;
 
     Vector3 TargetLocation;
@@ -18,7 +19,6 @@ public class MovingElevator : MonoBehaviour
     Vector3 DoorOpenPos;
 
     float PlatformMovingSpeed;
-    bool bIsArrived;
 
     void Awake()
     {
@@ -28,6 +28,7 @@ public class MovingElevator : MonoBehaviour
         DoorTransform = ElevatorDoor.GetComponent<Transform>();
         DoorOpenPos = DoorTransform.localPosition;
         DoorClosePos = new Vector3(DoorOpenPos.x, 0.0f, DoorOpenPos.z);
+        PlatformMovingSpeed = 0.0f;
         DoorOpen();
     }
 
@@ -35,8 +36,6 @@ public class MovingElevator : MonoBehaviour
     {
         if (bIsInteraction)
         {
-            Debug.Log(ObjTransform.position.y);
-            Debug.Log(TargetLocation.y);
             if (ObjTransform.position.y <= -52.7f)
             {
                 ObjTransform.position = TargetLocation;
@@ -47,12 +46,12 @@ public class MovingElevator : MonoBehaviour
             {
                 if (DoorClose())
                 {
-                    PlatformMovingSpeed += 0.002f;
-                    if (PlatformMovingSpeed >= 0.3f)
+                    PlatformMovingSpeed += 0.02f;
+                    if (PlatformMovingSpeed >= 7.0f)
                     {
-                        PlatformMovingSpeed = 0.3f;
+                        PlatformMovingSpeed = 7.0f;
                     }
-                    ObjTransform.position = Vector3.Lerp(ObjTransform.position, TargetLocation, Time.deltaTime * PlatformMovingSpeed);
+                    ObjTransform.Translate(Vector3.down * PlatformMovingSpeed * Time.deltaTime);
                 }
             }
         }
@@ -68,12 +67,12 @@ public class MovingElevator : MonoBehaviour
             {
                 if (DoorClose())
                 {
-                    PlatformMovingSpeed += 0.002f;
-                    if (PlatformMovingSpeed >= 0.3f)
+                    PlatformMovingSpeed += 0.02f;
+                    if (PlatformMovingSpeed >= 7.0f)
                     {
-                        PlatformMovingSpeed = 0.3f;
+                        PlatformMovingSpeed = 7.0f;
                     }
-                    ObjTransform.position = Vector3.Lerp(ObjTransform.position, OriginalLocation, Time.deltaTime * PlatformMovingSpeed);
+                    ObjTransform.Translate(Vector3.up * PlatformMovingSpeed * Time.deltaTime);
                 }
             }
         }

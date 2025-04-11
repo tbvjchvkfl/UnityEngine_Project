@@ -46,7 +46,7 @@ public class ClampingControl : MonoBehaviour
         }
     }
 
-    void CheckEnablePassingTrigger()
+    /*void CheckEnablePassingTrigger()
     {
         if (TargetTransform.position.x < transform.position.x)
         {
@@ -61,9 +61,9 @@ public class ClampingControl : MonoBehaviour
         {
             BoxCollision.isTrigger = false;
         }
-    }
+    }*/
 
-    void OnTriggerEnter2D(Collider2D collision)
+    /*void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.layer == 3)
         {
@@ -72,5 +72,5 @@ public class ClampingControl : MonoBehaviour
                 Debug.Log("Collision");
             }
         }
-    }
+    }*/
 }

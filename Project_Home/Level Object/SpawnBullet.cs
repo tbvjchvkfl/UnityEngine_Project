@@ -17,9 +17,9 @@ public class SpawnBullet : MonoBehaviour
         {
             if (collision.gameObject.tag == "Player")
             {
-                //collision.gameObject.GetComponent<PlayerInfo>().
+                collision.gameObject.GetComponent<PlayerInfo>().AddPocketItem();
+                Destroy(this.gameObject);
             }
         }
     }
-
 }

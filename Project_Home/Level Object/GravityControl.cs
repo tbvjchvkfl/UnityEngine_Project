@@ -34,7 +34,7 @@ public class GravityControl : MonoBehaviour
         {
             if (obj.gameObject.layer == 3)
             {
-                TargetRigid = obj.gameObject.GetComponent<PlayerInput>().GetPlayerRigid();
+                TargetRigid = obj.gameObject.GetComponent<Rigidbody2D>();
                 TargetTransform = obj.gameObject.GetComponent<Transform>();
                 if (TargetRigid)
                 {
@@ -52,7 +52,7 @@ public class GravityControl : MonoBehaviour
         {
             if (obj.gameObject.layer == 3)
             {
-                TargetRigid = obj.gameObject.GetComponent<PlayerInput>().GetPlayerRigid();
+                TargetRigid = obj.gameObject.GetComponent<Rigidbody2D>();
                 TargetTransform = obj.gameObject.GetComponent<Transform>();
                 if (TargetRigid)
                 {
