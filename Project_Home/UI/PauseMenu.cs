@@ -1,5 +1,4 @@
 using TMPro;
-using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -118,8 +117,7 @@ public class PauseMenu : MonoBehaviour
 
     public void OnClickedExit()
     {
-        SceneManager.LoadScene("Main Menu");
-        //Application.Quit();
+        SceneManager.LoadScene("MainMenu");
     }
 
     public void OnClickedControl()

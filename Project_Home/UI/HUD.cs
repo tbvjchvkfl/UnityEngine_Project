@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class HUD : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class HUD : MonoBehaviour
     GameObject PlayerHUD;
     GameObject PauseMenu;
     GameObject GameOver;
+    GameObject MainMenu;
+    public GameObject MainMenuCanvas;
 
     public bool bIsPause { get; set; }
 
@@ -50,26 +53,64 @@ public class HUD : MonoBehaviour
 
     void InitUIObjects()
     {
-        if (!PauseMenu)
+        if (SceneManager.GetActiveScene().buildIndex == 0)
         {
-            if (PauseMenu = GameObject.FindGameObjectWithTag("Pause Menu"))
+            if (!MainMenu)
             {
-                PauseMenu.SetActive(false);
-                bIsPause = false;
+                if (MainMenu = GameObject.FindGameObjectWithTag("Main Menu"))
+                {
+                    MainMenu.SetActive(true);
+                }
             }
         }
-        if (!PlayerHUD)
+        if (SceneManager.GetActiveScene().buildIndex == 1)
         {
-            if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
+            if (!PauseMenu)
             {
-                PlayerHealthBar.ShowPlayerUI();
+                if (PauseMenu = GameObject.FindGameObjectWithTag("Pause Menu"))
+                {
+                    PauseMenu.SetActive(false);
+                    bIsPause = false;
+                }
+            }
+            if (!PlayerHUD)
+            {
+                if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
+                {
+                    PlayerHealthBar.ShowPlayerUI();
+                }
+            }
+            if (!GameOver)
+            {
+                if (GameOver = GameObject.FindGameObjectWithTag("GameOver Menu"))
+                {
+                    GameOver.SetActive(false);
+                }
             }
         }
-        if (!GameOver)
+        if (SceneManager.GetActiveScene().buildIndex == 2)
         {
-            if (GameOver = GameObject.FindGameObjectWithTag("GameOver Menu"))
+            if (!PauseMenu)
             {
-                GameOver.SetActive(false);
+                if (PauseMenu = GameObject.FindGameObjectWithTag("Pause Menu"))
+                {
+                    PauseMenu.SetActive(false);
+                    bIsPause = false;
+                }
+            }
+            if (!PlayerHUD)
+            {
+                if (PlayerHUD = GameObject.FindGameObjectWithTag("Player HUD"))
+                {
+                    PlayerHealthBar.ShowPlayerUI();
+                }
+            }
+            if (!GameOver)
+            {
+                if (GameOver = GameObject.FindGameObjectWithTag("GameOver Menu"))
+                {
+                    GameOver.SetActive(false);
+                }
             }
         }
     }
