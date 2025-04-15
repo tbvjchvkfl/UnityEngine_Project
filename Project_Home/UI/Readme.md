@@ -181,6 +181,7 @@ Contents
   - #### Graphic Menu ( 화면 해상도 )
     > - 화면 해상도를 조절하는 메뉴를 만들기 위해 List와 Dictionnary를 사용했습니다.
     > - Screen.resolutions에서 특정 해상도만 체크하여 List에 담았고, 이를 <int, Resolution> 형태로 묶어 Dictionary에 저장했습니다.
+    > - 이 후, Player의 Input에 따라 게임 중 화면에 적용되어야할 화면 해상도 값과 관련 UI 요소들의 값을 변경해주었습니다.
   <pre>
    <code>
         List&lt;Resolution&gt; Resolutions;
@@ -220,7 +221,7 @@ Contents
         }
    </code>
   </pre>
-    > - 이 후, Player의 Input에 따라 게임 중 화면에 적용되어야할 화면 해상도 값과 관련 UI 요소들의 값을 변경해주었습니다.
+    
   <pre>
    <code>
         void ChangedResolutionSetting()
