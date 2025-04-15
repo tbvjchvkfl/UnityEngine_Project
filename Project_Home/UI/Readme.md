@@ -183,14 +183,14 @@ Contents
     > - Screen.resolutions에서 특정 해상도만 체크하여 List에 담았고, 이를 <int, Resolution> 형태로 묶어 Dictionary에 저장했습니다.
   <pre>
    <code>
-        List<Resolution> Resolutions;
-        Dictionary<int, Resolution> ResolutionDict;
+        List&lt;Resolution&gt; Resolutions;
+        Dictionary&lt;int, Resolution&gt; ResolutionDict;
         int ResolutionSettingIndex;
         
         void InitScreenResolution()
         {
-            Resolutions = new List<Resolution>();
-            ResolutionDict = new Dictionary<int, Resolution>();
+            Resolutions = new List&lt;Resolution&gt;();
+            ResolutionDict = new Dictionary&lt;int, Resolution&gt;();
             
             foreach (Resolution resol in Screen.resolutions)
             {
@@ -249,21 +249,21 @@ Contents
    </code>
   </pre>
 
-- #### Graphic Menu ( 화면 크기 )
-    > - 화면 크기 메뉴는 Tuple을 사용해서 구현했습니다.
-    > - 메뉴 UI를 구현할 때 필요한 정보들을 <현재 화면 해상도를 변경 할 수 있는지에 대한 여부, 화면 모드, 화면 모드의 이름> 으로 묶어 List에 저장했고, List의 Index를 ScreenModeSettingIndex에 저장하여 List의 각 Index에 전역 접근이 용이하도록 했습니다.
+  - #### Graphic Menu ( 화면 크기 )
+      > - 화면 크기 메뉴는 Tuple을 사용해서 구현했습니다.
+      > - 메뉴 UI를 구현할 때 필요한 정보들을 <현재 화면 해상도를 변경 할 수 있는지에 대한 여부, 화면 모드, 화면 모드의 이름> 으로 묶어 List에 저장했고, List의 Index를 ScreenModeSettingIndex에 저장하여 List의 각 Index에 전역 접근이 용이하도록 했습니다.
   <pre>
    <code>
-        List<Tuple<bool, FullScreenMode, string>> ScreenModes;
+        List&lt;Tuple&lt;bool, FullScreenMode, string&gt;&gt; ScreenModes;
         int ScreenModeSettingIndex;
 
         void InitScreenMode()
         {
             ScreenModeSettingIndex = 2;
-            ScreenModes = new List<Tuple<bool, FullScreenMode, string>>();
-            ScreenModes.Add(new Tuple<bool, FullScreenMode, string>(true, FullScreenMode.Windowed, "Windowed"));
-            ScreenModes.Add(new Tuple<bool, FullScreenMode, string>(false, FullScreenMode.FullScreenWindow, "FullScreenWindow"));
-            ScreenModes.Add(new Tuple<bool, FullScreenMode, string>(false, FullScreenMode.ExclusiveFullScreen, "FullScreen"));
+            ScreenModes = new List&lt;Tuple&lt;bool, FullScreenMode, string&gt;&gt;();
+            ScreenModes.Add(new Tuple&lt;bool, FullScreenMode, string&gt;(true, FullScreenMode.Windowed, "Windowed"));
+            ScreenModes.Add(new Tuple&lt;bool, FullScreenMode, string&gt;(false, FullScreenMode.FullScreenWindow, "FullScreenWindow"));
+            ScreenModes.Add(new Tuple&lt;bool, FullScreenMode, string&gt;(false, FullScreenMode.ExclusiveFullScreen, "FullScreen"));
             bIsEnableChangeResolutionMode = ScreenModes[ScreenModeSettingIndex].Item1;
             Screen.fullScreenMode = ScreenModes[ScreenModeSettingIndex].Item2;
             ScreenModeSettingText.text = ScreenModes[ScreenModeSettingIndex].Item3;
