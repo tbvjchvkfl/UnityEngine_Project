@@ -3,9 +3,9 @@ Boss Character
 
 Contents
 -
-[1. Strategy Pattern](#strategy-pattern)
-[2. Move State](#move-state)
-[3. Skill State](#skill-state)
+### [1. Strategy Pattern](#strategy-pattern)
+### [2. Move State](#move-state)
+### [3. Skill State](#skill-state)
 
 클래스 구조도
 -
