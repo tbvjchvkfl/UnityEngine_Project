@@ -130,7 +130,7 @@ Player Character
   </code>
 </pre>
 
-- Sliding
+- ### Sliding
   > - PlayerCharacter에 바닥 체크용 BoxCollider2D를 추가하고 해당 위치에서 RunWay라는 이름을 가진 레이어를 체크하는 방식으로 Sliding을 구현했습니다.
   > - BoxCollider2D 범위에 조건에 맞는 오브젝트가 Trigger되었다면 해당 오브젝트 Z축 회전값을 가져와서 PlayerCharacter의 회전 각도와 내려가야하는 방향을 정해주었고, Sliding 애니메이션을 출력하였습니다.
 <pre>
