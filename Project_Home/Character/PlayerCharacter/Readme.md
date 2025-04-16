@@ -3,10 +3,10 @@ Player Character
 
 목차
 -
-[1. Moving Action](#moving-action)
-[2.Dash(Roll)](#dash(roll))
-[3.Sliding](#sliding)
-[3. Interaction](#interaction)
+### [1. Moving Action](#moving-action)
+### [2.Dash(Roll)](#dash(roll))
+### [3.Sliding](#sliding)
+### [4. Interaction](#interaction)
 
 
 클래스 구조도
