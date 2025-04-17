@@ -9,7 +9,7 @@ Contents
 
 클래스 구조도
 -
-![Image](https://github.com/user-attachments/assets/9befbc87-d320-4735-a944-87ae7ae7d222)
+![Image](https://github.com/user-attachments/assets/2343d5d2-e08f-41a2-8052-6cf0cd0c2743)
 
 핵심 코드
 -
