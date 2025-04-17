@@ -8,11 +8,6 @@ Player Character
 ### [3.Sliding](#sliding)
 ### [4. Interaction](#interaction)
 
-
-클래스 구조도
--
-
-
 핵심 코드
 -
 - ### Moving Action
