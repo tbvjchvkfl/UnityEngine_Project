@@ -6,9 +6,6 @@ Contents
 ### [1. Canon Object](#canon-object)
 ### [2. Gravity Object](#gravity-object)
 
-클래스 구조도
--
-
 
 핵심 코드
 -
