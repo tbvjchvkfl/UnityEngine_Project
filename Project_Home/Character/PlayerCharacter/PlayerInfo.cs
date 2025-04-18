@@ -58,6 +58,7 @@ public class PlayerInfo : MonoBehaviour
         AnimationController = GetComponent<Animator>();
         GoalObjects = new Stack<GameObject>();
         HideTime = GoalUIHidingTime;
+        GetGameManagerData();
     }
 
     void Start()
@@ -86,7 +87,6 @@ public class PlayerInfo : MonoBehaviour
 
         if (CurrentHP <= 0)
         {
-            CurrentHP = 0;
             AnimationController.SetTrigger("Die");
             if (GameManager.Instance.bIsGameOver)
             {
@@ -143,7 +143,6 @@ public class PlayerInfo : MonoBehaviour
             transform.position = GameManager.Instance.PlayerLocation;
         }
         CurrentHP = GameManager.Instance.PlayerHP;
-        
     }
 
     // UI 관련 함수
