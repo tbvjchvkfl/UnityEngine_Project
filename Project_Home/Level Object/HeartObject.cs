@@ -18,7 +18,20 @@ public class HeartObject : MonoBehaviour
     {
         if (collision.gameObject.layer == 3)
         {
+            if (gameObject.tag == "FHObj")
+            {
+                GameManager.Instance.bIsFHeartObject = true;
+            }
+            else if (gameObject.tag == "SHObj")
+            {
+                GameManager.Instance.bIsSHeartObject = true;
+            }
+            else if (gameObject.tag == "THObj")
+            {
+                GameManager.Instance.bIsTHeartObject = true;
+            }
             GameManager.Instance.ApplyPlayerHP();
+            GameManager.Instance.SaveGame();
             Destroy(gameObject);
         }
     }

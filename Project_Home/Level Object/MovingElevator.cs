@@ -51,6 +51,7 @@ public class MovingElevator : MonoBehaviour
                     {
                         PlatformMovingSpeed = 7.0f;
                     }
+                    GameManager.Instance.PCInfo.gameObject.transform.Translate(Vector3.down * PlatformMovingSpeed * Time.deltaTime);
                     ObjTransform.Translate(Vector3.down * PlatformMovingSpeed * Time.deltaTime);
                 }
             }
@@ -72,6 +73,7 @@ public class MovingElevator : MonoBehaviour
                     {
                         PlatformMovingSpeed = 7.0f;
                     }
+                    GameManager.Instance.PCInfo.gameObject.transform.Translate(Vector3.down * PlatformMovingSpeed * Time.deltaTime);
                     ObjTransform.Translate(Vector3.up * PlatformMovingSpeed * Time.deltaTime);
                 }
             }
