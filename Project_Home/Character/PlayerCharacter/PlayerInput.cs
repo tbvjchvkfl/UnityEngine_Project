@@ -94,8 +94,6 @@ public class PlayerInput : MonoBehaviour
         CancelCannonControll();
     }
 
-    
-
     void FixedUpdate()
     {
         if (!bIsRolling && !bIsPowerJump && !bIsSliding && !bIsHit && !bIsDeath && !bIsStun)
@@ -186,7 +184,7 @@ public class PlayerInput : MonoBehaviour
                 MovementDirection = Vector3.zero;
                 AnimationController.SetBool("Moving", false);
             }
-            if (bIsInteraction)
+            else if (bIsInteraction)
             {
                 CharacterSprite.flipX = false;
             }
@@ -320,7 +318,7 @@ public class PlayerInput : MonoBehaviour
     {
         if (bIsInteraction)
         {
-            if (InteractionObj && InteractionObj.GetComponent<PlatformControl>().GetPullMax() && MovementDirection == Vector2.left)
+            if (InteractionObj && InteractionObj.GetComponent<PlatformControl>().bIsPullMax && MovementDirection == Vector2.left)
             {
                 CurrentSpeed = 0.0f;
             }
