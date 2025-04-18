@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 
 public interface IBossCharacterState
 {
@@ -286,6 +285,21 @@ public class BossMoveState : IBossCharacterState
     }
 }
 
+public class BossDieState : IBossCharacterState
+{
+    public void EnterState(BossCharacter boss)
+    {
+    }
+
+    public void ExcuteState(BossCharacter boss)
+    {
+    }
+
+    public void ExitState(BossCharacter boss)
+    {
+    }
+}
+
 public class BossCharacter : MonoBehaviour
 {
     [Header("GameObject")]
@@ -332,6 +346,7 @@ public class BossCharacter : MonoBehaviour
     public AnimationClip KickAttack;
     public AnimationClip GroundSlashAttack;
     public AnimationClip SlamptoIdle;
+    public AnimationClip DeathAnim;
 
     // Public Hide Value
     [HideInInspector] public Vector2 MovementDirection;
@@ -608,12 +623,21 @@ public class BossCharacter : MonoBehaviour
         }
         else if (CurrentHP <= 0.0f && !bIsFirstPhase && !bIsMiddlePhase && bIsLastPhase)
         {
-            Debug.Log("death");
+            CurrentHP = 0.0f;
+            ModifyingState(new BossDieState());
+            AnimationController.SetTrigger("Die");
+            StartCoroutine(ShowGameClearUI());
         }
         else
         {
             StartCoroutine(CharacterShake());
         }
+    }
+
+    IEnumerator ShowGameClearUI()
+    {
+        yield return new WaitForSeconds(DeathAnim.length);
+        HUD.Instance.ShowGameClearUI();
     }
 
     public void SpawnCannonBullet()
@@ -639,3 +663,6 @@ public class BossCharacter : MonoBehaviour
         BulletPocket.Clear();
     }
 }
+
+
+
