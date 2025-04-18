@@ -10,7 +10,6 @@ public class HUD : MonoBehaviour
     GameObject PauseMenu;
     GameObject GameOver;
     GameObject MainMenu;
-    public GameObject MainMenuCanvas;
 
     public bool bIsPause { get; set; }
 
@@ -71,6 +70,7 @@ public class HUD : MonoBehaviour
                 {
                     PauseMenu.SetActive(false);
                     bIsPause = false;
+                    Time.timeScale = 1.0f;
                 }
             }
             if (!PlayerHUD)
