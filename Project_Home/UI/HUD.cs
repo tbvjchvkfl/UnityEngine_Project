@@ -141,8 +141,15 @@ public class HUD : MonoBehaviour
 
     public void ShowGameOverUI()
     {
-        GameOver.SetActive(true);
         GameOverUI.bIsGameOver = true;
+        GameOver.SetActive(true);
+        Time.timeScale = 0.0f;
+    }
+
+    public void ShowGameClearUI()
+    {
+        GameOverUI.bIsGameClear = true;
+        GameOver.SetActive(true);
         Time.timeScale = 0.0f;
     }
 }

@@ -11,8 +11,10 @@ public class GameOverMenu : MonoBehaviour
     public Button MenuBtn;
     public TMP_Text RetryText;
     public TMP_Text MenuText;
+    public TMP_Text TitleText;
 
     public bool bIsGameOver {  get; set; }
+    public bool bIsGameClear {  get; set; }
 
     void Awake()
     {
@@ -23,6 +25,7 @@ public class GameOverMenu : MonoBehaviour
     {
         OnFocusRetryButton();
         OnFocusMenuButton();
+        ModifyTitleText();
     }
 
     void SetInitFocus()
@@ -56,13 +59,35 @@ public class GameOverMenu : MonoBehaviour
 
     public void OnClickedRetryButton()
     {
-        SceneManager.LoadScene("Stage_1_Boss");
+        if (GameManager.Instance.StageNumber == 1)
+        {
+            SceneManager.LoadScene("Stage_1");
+        }
+        if (GameManager.Instance.StageNumber == 2)
+        {
+            SceneManager.LoadScene("Stage_1_Boss");
+        }
+        GameManager.Instance.LoadGame();
+        bIsGameOver = false;
+        bIsGameClear = false;
         Time.timeScale = 1.0f;
     }
 
     public void OnClickedMenuButton()
     {
-        SceneManager.LoadScene("Main Menu");
+        SceneManager.LoadScene("MainMenu");
         Time.timeScale = 1.0f;
+    }
+
+    void ModifyTitleText()
+    {
+        if (bIsGameOver)
+        {
+            TitleText.text = "GAME OVER";
+        }
+        if (bIsGameClear)
+        {
+            TitleText.text = "GAME CLEAR";
+        }
     }
 }
