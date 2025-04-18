@@ -63,7 +63,6 @@ public class GraphicMenu : MonoBehaviour
     
     void InitScreenResolution()
     {
-        //ResolutionStack = new Stack<Resolution>();
         Resolutions = new List<Resolution>();
         ResolutionDict = new Dictionary<int, Resolution>();
         
@@ -81,7 +80,6 @@ public class GraphicMenu : MonoBehaviour
         for (int i = 0; i < Resolutions.Count; i++)
         {
             ResolutionDict.Add(i, Resolutions[i]);
-            Debug.Log(ResolutionDict[i]);
         }
 
         for (int i = 0; i < ResolutionDict.Count; i++)

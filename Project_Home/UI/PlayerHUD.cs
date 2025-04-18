@@ -31,7 +31,14 @@ public class PlayerHUD : MonoBehaviour
         }
         HidePlayerUI();
         TwinkleMAXText();
-        HOQuantityText.text = $"{GameManager.Instance.PCInfo.CurrentHP}";
+        if (GameManager.Instance.PlayerHP > 0)
+        {
+            HOQuantityText.text = $"{GameManager.Instance.PlayerHP}";
+        }
+        else
+        {
+            HOQuantityText.text = "0";
+        }
     }
 
     public void ShowPlayerUI()
@@ -41,7 +48,7 @@ public class PlayerHUD : MonoBehaviour
         HeartObjectIMG.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
         BackIMG.color = new Color(0.3f, 0.3f, 0.3f, 1.0f);
         HOQuantityText.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-        if (GameManager.Instance.PCInfo.CurrentHP >= 3)
+        if (GameManager.Instance.PlayerHP >= 3)
         {
             MAXText.enabled = true;
             MAXText.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);

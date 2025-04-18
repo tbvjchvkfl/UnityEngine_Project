@@ -1,5 +1,7 @@
 using System.Collections;
+using System.IO;
 using TMPro;
+using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -406,7 +408,7 @@ public class MainMenu : MonoBehaviour
 
     public void OnClickedGameStartButton()
     {
-        if (PlayerPrefs.HasKey("PlayerHP"))
+        if (File.Exists(GameManager.Instance.SavePath))
         {
             CheckActiveCoroutine(StartCoroutine(ShowTitleMenu()));
         }
@@ -428,7 +430,14 @@ public class MainMenu : MonoBehaviour
 
     public void OnClickedSubmitButton()
     {
-        SceneManager.LoadScene("Stage_1");
+        if (GameManager.Instance.StageNumber <= 1)
+        {
+            SceneManager.LoadScene("Stage_1");
+        }
+        if (GameManager.Instance.StageNumber == 2)
+        {
+            SceneManager.LoadScene("Stage_1_Boss");
+        }
     }
 
     public void OnClickedCancelButton()
