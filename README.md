@@ -26,3 +26,6 @@ Project With Unity6
 
 상세 코드 링크
 -
+### [1. 싱글톤 패턴을 이용한 게임 관리 및 저장 기능]
+### [2. 전략 패턴을 활용한 보스 AI]
+### [3. UI - Dictionary & Stack 활용]
