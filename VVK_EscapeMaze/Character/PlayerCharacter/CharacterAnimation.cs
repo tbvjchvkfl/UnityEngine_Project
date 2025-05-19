@@ -33,6 +33,7 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("InAir", characterMovement.bIsJump);
         animationController.SetBool("Move", characterMovement.bIsMove);
         animationController.SetBool("Walk", characterMovement.bIsWalk);
+        animationController.SetBool("Ground", characterMovement.bIsGround);
         //animationController.SetBool("Sprint", characterMovement.bIsSprint);
     }
 

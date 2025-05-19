@@ -27,6 +27,7 @@ public class CharacterMovement : MonoBehaviour
     public float jumpSpeed { get; private set; }
 
     public bool bIsJump { get; private set; }
+    public bool bIsGround { get; private set; }
     public bool bIsMove { get; private set; }
     public bool bIsWalk { get; private set; }
     public bool bIsSprint { get; private set; }
@@ -56,6 +57,7 @@ public class CharacterMovement : MonoBehaviour
     {
         bIsWalk = inputManager.bIsWalk;
         bIsSprint = inputManager.bIsSprint;
+        bIsGround = characterController.isGrounded;
     }
 
     void SetMoveDirection()
@@ -130,10 +132,12 @@ public class CharacterMovement : MonoBehaviour
             {
                 jumpSpeed = Mathf.Sqrt(maxJumpPower * -2.0f * gravity);
             }
+            bIsJump = true;
         }
         else
         {
             jumpSpeed += gravity * Time.deltaTime;
+            bIsJump = false;
         }
     }
 
