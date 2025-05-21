@@ -9,6 +9,8 @@ public class CharacterAnimation : MonoBehaviour
     Animator animationController;
 
     float leaningAngle = 0.5f;
+    float MoveStateIndex = 1.0f;
+
 
     void Awake()
     {
@@ -31,9 +33,18 @@ public class CharacterAnimation : MonoBehaviour
     {
         animationController.SetBool("InAir", characterMovement.bIsJump);
         animationController.SetBool("Move", characterMovement.bIsMove);
-        animationController.SetBool("Walk", characterMovement.bIsWalk);
         animationController.SetBool("Ground", characterMovement.bIsGround);
         animationController.SetBool("Sprint", characterMovement.bIsSprint);
+
+        SetAnimDataMoveStateIndex();
+    }
+
+    void SetAnimDataMoveStateIndex()
+    {
+        float WalkTarget = 0.0f;
+        float RunTarget = 1.0f;
+        MoveStateIndex = characterMovement.bIsWalk? WalkTarget : RunTarget;
+        animationController.SetFloat("State Index", MoveStateIndex);
     }
 
     public float CalculateDirection()
@@ -48,15 +59,15 @@ public class CharacterAnimation : MonoBehaviour
         float rotAngle = Vector3.SignedAngle(transform.forward, characterMovement.currentMoveDirection, Vector3.up);
         float targetLean = 0.5f;
 
-        Debug.Log(rotAngle);
+        //Debug.Log(rotAngle);
 
         // 왼쪽
-        if (rotAngle < -15.0f)
+        if (rotAngle < -10.0f)
         {
             targetLean = 0.0f;
         }
         // 오른쪽
-        else if (rotAngle > 15.0f)
+        else if (rotAngle > 10.0f)
         {
             targetLean = 1.0f;
         }
