@@ -1,6 +1,4 @@
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class CharacterMovement : MonoBehaviour
 {
@@ -10,21 +8,24 @@ public class CharacterMovement : MonoBehaviour
     public float maxSprintSpeed = 10.0f;
     public float acceleration = 5.0f;
     public float deceleration = 10.0f;
-    public float characterRotateSpeed = 2.5f;
+    
     public float maxJumpPower = 2.0f;
     public float gravity = -9.81f;
 
     [Header("Component")]
     public GameObject CameraObj;
 
+
     // Component
     Camera mainCamera;
     PCInputManager inputManager;
     CharacterController characterController;
+    
 
     // Move State Value
     public float moveSpeed { get; private set; }
     public float jumpSpeed { get; private set; }
+    public float characterRotationRate {  get; private set; }
 
     public bool bIsJump { get; private set; }
     public bool bIsGround { get; private set; }
@@ -62,8 +63,6 @@ public class CharacterMovement : MonoBehaviour
 
     void SetMoveDirection()
     {
-        Vector3 InputVector = new Vector3(inputManager.MovementDirection.x, 0.0f, inputManager.MovementDirection.y).normalized;
-
         Vector3 CameraForwardVector = mainCamera.transform.forward;
         CameraForwardVector.y = 0.0f;
         CameraForwardVector.Normalize();
@@ -72,7 +71,7 @@ public class CharacterMovement : MonoBehaviour
         CameraRightVector.y = 0.0f;
         CameraRightVector.Normalize();
 
-        Vector3 desiredMoveDirection = (CameraForwardVector * InputVector.z + CameraRightVector * InputVector.x).normalized;
+        Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
 
         // 감속 나아아아아아아중에 애니메이션 작업 전부 끝나고 테스트해볼 것
         //currentMoveDirection = Vector3.Lerp(currentMoveDirection, desiredMoveDirection, Time.fixedDeltaTime * 10.0f);
@@ -99,13 +98,13 @@ public class CharacterMovement : MonoBehaviour
         if (moveDirection.magnitude > 0.1f)
         {
             Quaternion toRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotateSpeed);
+            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
         }
     }
 
     void CalculateMoveSpeed()
     {
-        if (inputManager.MovementDirection.magnitude > 0.1f)
+        if (inputManager.inputDirection.magnitude > 0.1f)
         {
             bIsMove = true;
             float speed = bIsSprint ? maxSprintSpeed : 
@@ -139,6 +138,16 @@ public class CharacterMovement : MonoBehaviour
             jumpSpeed += gravity * Time.deltaTime;
             bIsJump = false;
         }
+    }
+
+    public void SetRotationRate(float newrotationRate)
+    {
+        characterRotationRate = newrotationRate;
+    }
+
+    public void SetMoveSpeed(float newmoveSpeed)
+    {
+        moveSpeed = newmoveSpeed;
     }
 
     public void Move()

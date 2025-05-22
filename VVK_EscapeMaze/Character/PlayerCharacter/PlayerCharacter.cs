@@ -12,10 +12,8 @@ public class PlayerCharacter : MonoBehaviour
 
     void Update()
     {
-        Vector3 origin = transform.position + Vector3.up * 1.0f; // 시야 중심 위치에서 시작
-        Vector3 forward = transform.forward * 50.0f;
-
-        Debug.DrawLine(origin, origin + forward, Color.green);
+        Debug.DrawRay(transform.position, transform.forward * 2, Color.red); // 현재 전방
+        Debug.DrawRay(transform.position, characterMovement.currentMoveDirection * 2, Color.blue); // 이동 방향
     }
 
     void FixedUpdate()

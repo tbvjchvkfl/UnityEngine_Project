@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
@@ -10,7 +11,7 @@ public class CharacterAnimation : MonoBehaviour
 
     float leaningAngle = 0.5f;
     float MoveStateIndex = 1.0f;
-
+    //public Vector3 preMoveDirection {  get; private set; }
 
     void Awake()
     {
@@ -27,6 +28,7 @@ public class CharacterAnimation : MonoBehaviour
         characterMovement = GetComponent<CharacterMovement>();
         characterAction = GetComponent<CharacterAction>();
         animationController = GetComponent<Animator>();
+        //preMoveDirection = transform.forward;
     }
 
     void SetMovementData()
@@ -35,6 +37,8 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("Move", characterMovement.bIsMove);
         animationController.SetBool("Ground", characterMovement.bIsGround);
         animationController.SetBool("Sprint", characterMovement.bIsSprint);
+
+        characterMovement.SetRotationRate(animationController.GetFloat("Rotation Value For Script"));
 
         SetAnimDataMoveStateIndex();
     }
@@ -50,7 +54,10 @@ public class CharacterAnimation : MonoBehaviour
     public float CalculateDirection()
     {
         float moveAngle = Vector3.SignedAngle(transform.forward, characterMovement.currentMoveDirection, Vector3.up);
-        
+        //float rotDirection = Vector3.SignedAngle(preMoveDirection, characterMovement.currentMoveDirection, Vector3.up);
+
+        //preMoveDirection = characterMovement.currentMoveDirection;
+
         return moveAngle;
     }
 
@@ -58,8 +65,6 @@ public class CharacterAnimation : MonoBehaviour
     {
         float rotAngle = Vector3.SignedAngle(transform.forward, characterMovement.currentMoveDirection, Vector3.up);
         float targetLean = 0.5f;
-
-        //Debug.Log(rotAngle);
 
         // 왼쪽
         if (rotAngle < -10.0f)
