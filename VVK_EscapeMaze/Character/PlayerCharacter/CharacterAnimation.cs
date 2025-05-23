@@ -3,15 +3,17 @@ using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
 {
+    [Header("Object Component")]
     public Camera mainCamera;
 
+    PCInputManager inputManager;
     CharacterMovement characterMovement;
     CharacterAction characterAction;
     Animator animationController;
 
     float leaningAngle = 0.5f;
     float MoveStateIndex = 1.0f;
-    //public Vector3 preMoveDirection {  get; private set; }
+
 
     void Awake()
     {
@@ -25,30 +27,32 @@ public class CharacterAnimation : MonoBehaviour
 
     void SetEssentialData()
     {
+        inputManager = GetComponent<PCInputManager>();
         characterMovement = GetComponent<CharacterMovement>();
         characterAction = GetComponent<CharacterAction>();
         animationController = GetComponent<Animator>();
-        //preMoveDirection = transform.forward;
     }
 
     void SetMovementData()
     {
-        animationController.SetBool("InAir", characterMovement.bIsJump);
-        animationController.SetBool("Move", characterMovement.bIsMove);
-        animationController.SetBool("Ground", characterMovement.bIsGround);
-        animationController.SetBool("Sprint", characterMovement.bIsSprint);
-
+        animationController.SetBool("InAir", inputManager.bIsJump);
+        animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
+        animationController.SetFloat("State Index", SetMoveStateIndex());
         characterMovement.SetRotationRate(animationController.GetFloat("Rotation Value For Script"));
-
-        SetAnimDataMoveStateIndex();
+        characterMovement.SetMoveSpeed(animationController.GetFloat("MoveSpeed For Script"));
     }
 
-    void SetAnimDataMoveStateIndex()
+    float SetMoveStateIndex()
     {
         float WalkTarget = 0.0f;
         float RunTarget = 1.0f;
-        MoveStateIndex = characterMovement.bIsWalk? WalkTarget : RunTarget;
-        animationController.SetFloat("State Index", MoveStateIndex);
+        float SprintTarget = 2.0f;
+
+        MoveStateIndex = inputManager.bIsWalk ? Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime) :
+                         inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, SprintTarget, Time.deltaTime) :
+                                                        Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime);
+
+        return MoveStateIndex;
     }
 
     public float CalculateDirection()

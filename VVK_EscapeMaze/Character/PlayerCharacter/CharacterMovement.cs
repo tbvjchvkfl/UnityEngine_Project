@@ -3,16 +3,12 @@ using UnityEngine;
 public class CharacterMovement : MonoBehaviour
 {
     [Header("Locomotion")]
-    public float maxWalkSpeed = 2.0f;
-    public float maxRunSpeed = 5.0f;
-    public float maxSprintSpeed = 10.0f;
-    public float acceleration = 5.0f;
-    public float deceleration = 10.0f;
-    
+    public float maxMoveSpeed = 1.0f;
+
     public float maxJumpPower = 2.0f;
     public float gravity = -9.81f;
 
-    [Header("Component")]
+    [Header("Object Component")]
     public GameObject CameraObj;
 
 
@@ -27,12 +23,6 @@ public class CharacterMovement : MonoBehaviour
     public float jumpSpeed { get; private set; }
     public float characterRotationRate {  get; private set; }
 
-    public bool bIsJump { get; private set; }
-    public bool bIsGround { get; private set; }
-    public bool bIsMove { get; private set; }
-    public bool bIsWalk { get; private set; }
-    public bool bIsSprint { get; private set; }
-
     public Vector3 currentMoveDirection { get; private set; }
     public Vector3 lastMoveDirection { get; private set; }
 
@@ -43,7 +33,6 @@ public class CharacterMovement : MonoBehaviour
 
     void Update()
     {
-        CheckMoveState();
     }
 
     void InitEssentialData()
@@ -52,13 +41,6 @@ public class CharacterMovement : MonoBehaviour
         inputManager = GetComponent<PCInputManager>();
         characterController = GetComponent<CharacterController>();
         lastMoveDirection = transform.forward;
-    }
-
-    void CheckMoveState()
-    {
-        bIsWalk = inputManager.bIsWalk;
-        bIsSprint = inputManager.bIsSprint;
-        bIsGround = characterController.isGrounded;
     }
 
     void SetMoveDirection()
@@ -72,13 +54,6 @@ public class CharacterMovement : MonoBehaviour
         CameraRightVector.Normalize();
 
         Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
-
-        // 감속 나아아아아아아중에 애니메이션 작업 전부 끝나고 테스트해볼 것
-        //currentMoveDirection = Vector3.Lerp(currentMoveDirection, desiredMoveDirection, Time.fixedDeltaTime * 10.0f);
-        /*float smoothTime = desiredMoveDirection.magnitude > 0.1f ? 0.05f : 0.15f;
-        Vector3 vector = Vector3.zero;
-        currentMoveDirection = Vector3.SmoothDamp(currentMoveDirection, desiredMoveDirection, ref vector, smoothTime);
-        Debug.Log(vector);*/
 
         if(desiredMoveDirection.magnitude > 0.1f)
         {
@@ -102,23 +77,6 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    void CalculateMoveSpeed()
-    {
-        if (inputManager.inputDirection.magnitude > 0.1f)
-        {
-            bIsMove = true;
-            float speed = bIsSprint ? maxSprintSpeed : 
-                          bIsWalk ? maxWalkSpeed : maxRunSpeed;
-
-            moveSpeed = Mathf.MoveTowards(moveSpeed, speed, acceleration * Time.fixedDeltaTime);
-        }
-        else
-        {
-            bIsMove = false;
-            moveSpeed = Mathf.MoveTowards(moveSpeed, 0.0f, deceleration * Time.fixedDeltaTime);
-        }
-    }
-
     void SetJumpSpeed()
     {
         if (characterController.isGrounded && inputManager.bIsJump)
@@ -131,12 +89,12 @@ public class CharacterMovement : MonoBehaviour
             {
                 jumpSpeed = Mathf.Sqrt(maxJumpPower * -2.0f * gravity);
             }
-            bIsJump = true;
+            //bIsJump = true;
         }
         else
         {
             jumpSpeed += gravity * Time.deltaTime;
-            bIsJump = false;
+            //bIsJump = false;
         }
     }
 
@@ -153,10 +111,9 @@ public class CharacterMovement : MonoBehaviour
     public void Move()
     {
         SetMoveDirection();
-        CalculateMoveSpeed();
         SetJumpSpeed();
         
-        Vector3 DesiredDirection = currentMoveDirection * moveSpeed;
+        Vector3 DesiredDirection = currentMoveDirection * moveSpeed * maxMoveSpeed;
         DesiredDirection.y = jumpSpeed;
 
         characterController.Move(DesiredDirection * Time.fixedDeltaTime);
