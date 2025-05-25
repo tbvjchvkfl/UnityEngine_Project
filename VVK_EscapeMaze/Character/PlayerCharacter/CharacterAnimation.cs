@@ -1,4 +1,5 @@
 using System;
+using Unity.Jobs;
 using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
@@ -12,8 +13,8 @@ public class CharacterAnimation : MonoBehaviour
     Animator animationController;
 
     float leaningAngle = 0.5f;
-    float MoveStateIndex = 1.0f;
-
+    float MoveStateIndex = 2.0f;
+    float AimStateIndex = 1.0f;
 
     void Awake()
     {
@@ -37,30 +38,72 @@ public class CharacterAnimation : MonoBehaviour
     {
         animationController.SetBool("InAir", inputManager.bIsJump);
         animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
-        animationController.SetFloat("State Index", SetMoveStateIndex());
+        animationController.SetBool("Crouch", inputManager.bIsCrouch);
+        animationController.SetBool("Aim", inputManager.bIsAim);
+        animationController.SetFloat("Move State Index", SetMoveStateIndex());
+        animationController.SetFloat("Aim State Index", SetAimStateIndex());
+
         characterMovement.SetRotationRate(animationController.GetFloat("Rotation Value For Script"));
         characterMovement.SetMoveSpeed(animationController.GetFloat("MoveSpeed For Script"));
     }
 
     float SetMoveStateIndex()
     {
-        float WalkTarget = 0.0f;
-        float RunTarget = 1.0f;
-        float SprintTarget = 2.0f;
+        float CrouchTarget = 0.0f;
+        float WalkTarget = 1.0f;
+        float RunTarget = 2.0f;
+        float SprintTarget = 3.0f;
 
-        MoveStateIndex = inputManager.bIsWalk ? Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime) :
-                         inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, SprintTarget, Time.deltaTime) :
-                                                        Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime);
-
+        MoveStateIndex = inputManager.bIsCrouch ? Mathf.MoveTowards(MoveStateIndex, CrouchTarget, Time.deltaTime * 2.5f) :
+                                 inputManager.bIsWalk ? Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime) :
+                                 inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, SprintTarget, Time.deltaTime) :
+                                                                Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime);
         return MoveStateIndex;
+    }
+
+    float SetAimStateIndex()
+    {
+        float AimTarget = 0.0f;
+        float NormalTarget = 1.0f;
+        float LockOnTarget = 2.0f;
+
+        float ReturnTarget = 1.0f;
+        if (inputManager.bIsAim)
+        {
+            ReturnTarget = AimTarget;
+            
+        }
+        else
+        {
+            ReturnTarget = NormalTarget;
+        }
+
+        AimStateIndex = Mathf.MoveTowards(AimStateIndex, ReturnTarget, Time.deltaTime * 2.5f);
+        return AimStateIndex;
     }
 
     public float CalculateDirection()
     {
-        float moveAngle = Vector3.SignedAngle(transform.forward, characterMovement.currentMoveDirection, Vector3.up);
-        //float rotDirection = Vector3.SignedAngle(preMoveDirection, characterMovement.currentMoveDirection, Vector3.up);
+        Vector3 CameraForwardVector = mainCamera.transform.forward;
+        CameraForwardVector.y = 0.0f;
+        CameraForwardVector.Normalize();
 
-        //preMoveDirection = characterMovement.currentMoveDirection;
+        Vector3 CameraRightVector = mainCamera.transform.right;
+        CameraRightVector.y = 0.0f;
+        CameraRightVector.Normalize();
+
+        Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
+
+        float moveAngle = Vector3.SignedAngle(transform.forward, desiredMoveDirection, Vector3.up);
+        //float finalAngle = moveAngle * -1.0f;
+        /*if((desiredMoveDirection.z < 0.0f && moveAngle > 0.0f) || 
+            (desiredMoveDirection.z > 0.0f && moveAngle < 0.0f) ||
+            (desiredMoveDirection.x < 0.0f && moveAngle > 0.0f)||
+            (desiredMoveDirection.x > 0.0f && moveAngle < 0.0f))
+        {
+            finalAngle = moveAngle * -1.0f;
+            Debug.Log("Reverse");
+        }*/
 
         return moveAngle;
     }
@@ -88,5 +131,13 @@ public class CharacterAnimation : MonoBehaviour
 
         leaningAngle = Mathf.MoveTowards(leaningAngle, targetLean, Time.deltaTime);
         return leaningAngle;
+    }
+
+    public void SetCrouchStateIndexInAnimClip()
+    {
+        if (inputManager.bIsCrouch && MoveStateIndex > 0.0f)
+        {
+            MoveStateIndex = 0.0f;
+        }
     }
 }

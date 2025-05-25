@@ -24,7 +24,7 @@ public class CharacterMovement : MonoBehaviour
     public float characterRotationRate {  get; private set; }
 
     public Vector3 currentMoveDirection { get; private set; }
-    public Vector3 lastMoveDirection { get; private set; }
+    public Vector3 lastInputDirection {  get; private set; }
 
     void Awake()
     {
@@ -40,7 +40,7 @@ public class CharacterMovement : MonoBehaviour
         mainCamera = CameraObj.GetComponent<Camera>();
         inputManager = GetComponent<PCInputManager>();
         characterController = GetComponent<CharacterController>();
-        lastMoveDirection = transform.forward;
+        lastInputDirection = transform.forward;
     }
 
     void SetMoveDirection()
@@ -57,12 +57,12 @@ public class CharacterMovement : MonoBehaviour
 
         if(desiredMoveDirection.magnitude > 0.1f)
         {
-            lastMoveDirection = desiredMoveDirection;
+            lastInputDirection = desiredMoveDirection;
             currentMoveDirection = desiredMoveDirection;
         }
         else
         {
-            currentMoveDirection = lastMoveDirection;
+            currentMoveDirection = lastInputDirection;
         }
 
         SetRotateDirection(currentMoveDirection);
@@ -70,11 +70,19 @@ public class CharacterMovement : MonoBehaviour
 
     void SetRotateDirection(Vector3 moveDirection)
     {
-        if (moveDirection.magnitude > 0.1f)
+        Quaternion toRotation = Quaternion.identity;
+        if (!inputManager.bIsAim)
         {
-            Quaternion toRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
+            if (moveDirection.magnitude > 0.1f)
+            {
+                toRotation = Quaternion.LookRotation(moveDirection);
+            }
         }
+        else
+        {
+            toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+        }
+        transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
     }
 
     void SetJumpSpeed()

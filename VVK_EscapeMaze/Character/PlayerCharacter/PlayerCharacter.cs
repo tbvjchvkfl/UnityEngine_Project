@@ -4,6 +4,7 @@ public class PlayerCharacter : MonoBehaviour
 {
     CharacterMovement characterMovement;
     CharacterAction characterAction;
+
     void Awake()
     {
         characterMovement = GetComponent<CharacterMovement>();

@@ -6,9 +6,9 @@ public class EnteredMoveStart : StateMachineBehaviour
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        float moveStartAngle = animator.GetComponent<CharacterAnimation>().CalculateDirection();
+        float moveStartAngle = animator.gameObject.GetComponent<CharacterAnimation>().CalculateDirection();
 
-        Debug.Log(moveStartAngle);
+        //Debug.Log("Angle : " + moveStartAngle);
 
         if (moveStartAngle >= -22.0f && moveStartAngle <= 22.0f)
         {
