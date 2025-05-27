@@ -34,3 +34,16 @@ Project With Unity6
 ### [1. 싱글톤 패턴을 이용한 게임 관리 및 저장 기능](https://github.com/tbvjchvkfl/UnityEngine_Project/tree/main/Project_Home/Scene)
 ### [2. 전략 패턴을 활용한 보스 AI](https://github.com/tbvjchvkfl/UnityEngine_Project/tree/main/Project_Home/Character/EnemyCharacter)
 ### [3. UI - Dictionary & Stack 활용](https://github.com/tbvjchvkfl/UnityEngine_Project/tree/main/Project_Home/UI)
+
+
+VVK
+-
+
+소개
+-
+
+플레이 영상
+-
+
+개발 내역
+-
