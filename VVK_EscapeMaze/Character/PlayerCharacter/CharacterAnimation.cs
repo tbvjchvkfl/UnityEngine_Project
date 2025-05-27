@@ -1,5 +1,3 @@
-using System;
-using Unity.Jobs;
 using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
@@ -71,7 +69,7 @@ public class CharacterAnimation : MonoBehaviour
         if (inputManager.bIsAim)
         {
             ReturnTarget = AimTarget;
-            
+            //animationController.SetLayerWeight(1, Mathf.MoveTowards(animationController.GetLayerWeight(1), 1.0f, Time.deltaTime));
         }
         else
         {
