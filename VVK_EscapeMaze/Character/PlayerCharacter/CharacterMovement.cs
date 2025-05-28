@@ -81,6 +81,8 @@ public class CharacterMovement : MonoBehaviour
         else
         {
             toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+            toRotation.x = 0.0f;
+            toRotation.z = 0.0f;
         }
         transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
     }

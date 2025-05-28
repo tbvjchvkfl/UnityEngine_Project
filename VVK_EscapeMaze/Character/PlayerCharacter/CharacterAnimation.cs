@@ -10,9 +10,9 @@ public class CharacterAnimation : MonoBehaviour
     CharacterAction characterAction;
     Animator animationController;
 
-    float leaningAngle = 0.5f;
-    float MoveStateIndex = 2.0f;
-    float AimStateIndex = 1.0f;
+    public float leaningAngle {  get; private set; }
+    public float MoveStateIndex {  get; private set; }
+    public float AimStateIndex {  get; private set; }
 
     void Awake()
     {
@@ -30,6 +30,10 @@ public class CharacterAnimation : MonoBehaviour
         characterMovement = GetComponent<CharacterMovement>();
         characterAction = GetComponent<CharacterAction>();
         animationController = GetComponent<Animator>();
+
+        leaningAngle = 0.0f;
+        MoveStateIndex = 2.0f;
+        AimStateIndex = 1.0f;
     }
 
     void SetMovementData()
@@ -63,13 +67,11 @@ public class CharacterAnimation : MonoBehaviour
     {
         float AimTarget = 0.0f;
         float NormalTarget = 1.0f;
-        float LockOnTarget = 2.0f;
 
         float ReturnTarget = 1.0f;
         if (inputManager.bIsAim)
         {
             ReturnTarget = AimTarget;
-            //animationController.SetLayerWeight(1, Mathf.MoveTowards(animationController.GetLayerWeight(1), 1.0f, Time.deltaTime));
         }
         else
         {
@@ -109,12 +111,12 @@ public class CharacterAnimation : MonoBehaviour
     public float CalculateRotation()
     {
         float rotAngle = Vector3.SignedAngle(transform.forward, characterMovement.currentMoveDirection, Vector3.up);
-        float targetLean = 0.5f;
+        float targetLean = 0.0f;
 
         // 왼쪽
         if (rotAngle < -10.0f)
         {
-            targetLean = 0.0f;
+            targetLean = -1.0f;
         }
         // 오른쪽
         else if (rotAngle > 10.0f)
@@ -124,7 +126,7 @@ public class CharacterAnimation : MonoBehaviour
         // 가운데
         else
         {
-            targetLean = 0.5f;
+            targetLean = 0.0f;
         }
 
         leaningAngle = Mathf.MoveTowards(leaningAngle, targetLean, Time.deltaTime);
