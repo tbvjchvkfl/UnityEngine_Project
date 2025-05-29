@@ -5,6 +5,10 @@ public class CharacterAnimation : MonoBehaviour
     [Header("Object Component")]
     public Camera mainCamera;
 
+    public GameObject Spine_Test;
+    public GameObject Clavicle_L;
+    public GameObject Clavicle_R;
+
     PCInputManager inputManager;
     CharacterMovement characterMovement;
     CharacterAction characterAction;
@@ -22,6 +26,16 @@ public class CharacterAnimation : MonoBehaviour
     void Update()
     {
         SetMovementData();
+    }
+
+    void LateUpdate()
+    {
+        if(AimStateIndex == 0)
+        {
+            //Spine_Test.transform.localRotation = Quaternion.Euler(20.0f, 0.0f, 0.0f);
+            //Clavicle_L.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+            //Clavicle_R.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+        }
     }
 
     void SetEssentialData()
@@ -72,10 +86,14 @@ public class CharacterAnimation : MonoBehaviour
         if (inputManager.bIsAim)
         {
             ReturnTarget = AimTarget;
+            float LayerWeight = Mathf.MoveTowards(animationController.GetLayerWeight(1), 1.0f, Time.deltaTime * 5.0f);
+            animationController.SetLayerWeight(1, LayerWeight);
         }
         else
         {
             ReturnTarget = NormalTarget;
+            float LayerWeight = Mathf.MoveTowards(animationController.GetLayerWeight(1), 0.0f, Time.deltaTime * 5.0f);
+            animationController.SetLayerWeight(1, LayerWeight);
         }
 
         AimStateIndex = Mathf.MoveTowards(AimStateIndex, ReturnTarget, Time.deltaTime * 2.5f);

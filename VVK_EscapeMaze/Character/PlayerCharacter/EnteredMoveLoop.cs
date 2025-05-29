@@ -47,16 +47,16 @@ public class EnteredMoveLoop : StateMachineBehaviour
                 TargetAngle = -180.0f;
             }
 
-
-            if (TargetAngle == 180.0f && MovementAngle <= 90.0f || TargetAngle == -180.0f && MovementAngle>= -90.0f)
+            float DeltaAngle = Mathf.DeltaAngle(MovementAngle, TargetAngle);
+            if (Mathf.Abs(DeltaAngle) > 179.0f)
             {
-                MovementAngle = 180.0f;
+                MovementAngle = TargetAngle;
             }
-            else if (TargetAngle == 0.0f && MovementAngle>= 90.0f || TargetAngle == 0.0f && MovementAngle<= -90.0f)
+            else
             {
-
+                MovementAngle = Mathf.MoveTowards(MovementAngle, TargetAngle, Time.deltaTime * 200.0f);
             }
-            MovementAngle = Mathf.MoveTowards(MovementAngle, TargetAngle, Time.deltaTime * 200.0f);
+            
             animator.SetFloat("MoveAngle", MovementAngle);
         }
         else
