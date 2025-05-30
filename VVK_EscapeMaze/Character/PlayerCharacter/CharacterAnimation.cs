@@ -56,6 +56,8 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
         animationController.SetBool("Crouch", inputManager.bIsCrouch);
         animationController.SetBool("Aim", inputManager.bIsAim);
+        animationController.SetBool("Attack", inputManager.bIsAim && inputManager.bIsNormalAttack);
+
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
 
