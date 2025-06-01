@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using static UnityEngine.GraphicsBuffer;
 
 public class CameraController : MonoBehaviour
@@ -6,6 +7,7 @@ public class CameraController : MonoBehaviour
     [Header("Camera Property")]
     public GameObject TargetObj;
     public GameObject CameraObj;
+    public GameObject AimTarget;
     public float CameraRotationSpeed; // 1보다 높아지면 과하게 빨라짐 왠만하면 0~1값을 유지할 것
     public float ZoomSpeed = 3.0f;
 
@@ -16,6 +18,8 @@ public class CameraController : MonoBehaviour
     float PitchAxisValue;
     float ZoomFactor = -3.0f;
 
+    LayerMask aimLayerMask;
+
     void Awake()
     {
         InputManager = TargetObj.GetComponent<PCInputManager>();
@@ -25,6 +29,7 @@ public class CameraController : MonoBehaviour
     {
         AttachtoTargetObj();
         CameraControll();
+        SetAimOffset();
         Zoom();
     }
 
@@ -45,6 +50,19 @@ public class CameraController : MonoBehaviour
         CameraRotateDirection = new Vector3(PitchAxisValue, YawAxisValue, 0.0f);
 
         transform.rotation = Quaternion.Euler(CameraRotateDirection);
+    }
+
+    void SetAimOffset()
+    {
+        Ray ray = CameraObj.GetComponent<Camera>().ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0.0f));
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, aimLayerMask))
+        {
+            AimTarget.transform.position = hit.point;
+        }
+        else
+        {
+            AimTarget.transform.position = ray.GetPoint(10f);
+        }
     }
 
     void Zoom()
