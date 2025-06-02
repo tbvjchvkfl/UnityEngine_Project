@@ -20,5 +20,6 @@ public class PlayerCharacter : MonoBehaviour
     void FixedUpdate()
     {
         characterMovement.Move();
+        characterAction.ShootPistol();
     }
 }

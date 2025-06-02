@@ -1,13 +1,15 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CharacterAnimation : MonoBehaviour
 {
     [Header("Object Component")]
     public Camera mainCamera;
 
-    public GameObject Spine_Test;
-    public GameObject Clavicle_L;
-    public GameObject Clavicle_R;
+    public GameObject head_Bone;
+    public GameObject spine_Bone;
+    public GameObject clavicle_L;
+    public GameObject clavicle_R;
 
     PCInputManager inputManager;
     CharacterMovement characterMovement;
@@ -28,26 +30,16 @@ public class CharacterAnimation : MonoBehaviour
         SetMovementData();
     }
 
-    void LateUpdate()
-    {
-        if(AimStateIndex == 0)
-        {
-            //Spine_Test.transform.localRotation = Quaternion.Euler(20.0f, 0.0f, 0.0f);
-            //Clavicle_L.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-            //Clavicle_R.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-        }
-    }
-
     void SetEssentialData()
     {
-        inputManager = GetComponent<PCInputManager>();
-        characterMovement = GetComponent<CharacterMovement>();
-        characterAction = GetComponent<CharacterAction>();
+        inputManager = GetComponentInParent<PCInputManager>();
+        characterMovement = GetComponentInParent<CharacterMovement>();
+        characterAction = GetComponentInParent<CharacterAction>();
         animationController = GetComponent<Animator>();
 
         leaningAngle = 0.0f;
         MoveStateIndex = 2.0f;
-        AimStateIndex = 1.0f;
+        AimStateIndex = 0.0f;
     }
 
     void SetMovementData()
@@ -57,6 +49,7 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("Crouch", inputManager.bIsCrouch);
         animationController.SetBool("Aim", inputManager.bIsAim);
         animationController.SetBool("Attack", inputManager.bIsAim && inputManager.bIsNormalAttack);
+        animationController.SetBool("Lock On", inputManager.bIsLockOn);
 
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
@@ -81,10 +74,10 @@ public class CharacterAnimation : MonoBehaviour
 
     float SetAimStateIndex()
     {
-        float AimTarget = 0.0f;
-        float NormalTarget = 1.0f;
+        float AimTarget = -1.0f;
+        float NormalTarget = 0.0f;
 
-        float ReturnTarget = 1.0f;
+        float ReturnTarget = 0.0f;
         if (inputManager.bIsAim)
         {
             ReturnTarget = AimTarget;
@@ -151,13 +144,5 @@ public class CharacterAnimation : MonoBehaviour
 
         leaningAngle = Mathf.MoveTowards(leaningAngle, targetLean, Time.deltaTime);
         return leaningAngle;
-    }
-
-    public void SetCrouchStateIndexInAnimClip()
-    {
-        if (inputManager.bIsCrouch && MoveStateIndex > 0.0f)
-        {
-            MoveStateIndex = 0.0f;
-        }
     }
 }
