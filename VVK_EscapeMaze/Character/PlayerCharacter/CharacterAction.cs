@@ -107,21 +107,27 @@ public class CharacterAction : MonoBehaviour
     {
         if (inputManager.bIsAim && inputManager.bIsNormalAttack)
         {
-            GameObject Bullet = UseBulletPool();
-            Vector3 bulletDirection = (TargetAim.transform.position - PistolMuzzle.transform.position).normalized;
-            if (Bullet && !bIsPistolFire)
+            if(!bIsPistolFire)
             {
-                bIsPistolFire = true;
-                Bullet.SetActive(true);
-                Bullet.transform.position = PistolMuzzle.transform.position;
-                Bullet.GetComponent<Bullet>().Fire(bulletDirection, PistolBulletSpeed);
-                StartCoroutine(PistolShootInterval());
+                GameObject bullet = UseBulletPool();
+                if (bullet)
+                {
+                    bIsPistolFire = true;
+                    Vector3 bulletDirection = (TargetAim.transform.position - PistolMuzzle.transform.position).normalized;
+                    Bullet bulletComponent = bullet.GetComponent<Bullet>();
+                    bulletComponent.InitBullet(this.gameObject);
+                    bullet.SetActive(true);
+                    bullet.transform.position = PistolMuzzle.transform.position;
+                    bulletComponent.Fire(bulletDirection, PistolBulletSpeed);
+                    StartCoroutine(PistolShootInterval());
+                    Debug.Log("Shoot");
+                }
+                else
+                {
+                    Debug.Log("Empty Bullet");
+                }
+                Debug.DrawRay(PistolMuzzle.transform.position, (TargetAim.transform.position - PistolMuzzle.transform.position).normalized * 20.0f, Color.red, 10.0f);
             }
-            else
-            {
-                Debug.Log("Empty Bullet");
-            }
-            Debug.DrawRay(PistolMuzzle.transform.position, (TargetAim.transform.position - PistolMuzzle.transform.position).normalized * 20.0f, Color.red, 10.0f);
         }
     }
 
