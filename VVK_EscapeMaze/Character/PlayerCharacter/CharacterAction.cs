@@ -50,6 +50,7 @@ public class CharacterAction : MonoBehaviour
     void Start()
     {
         InitBulletPool();
+        inputManager.OnNormalAttackEvent += ShootPistol;
     }
 
     void Update()
@@ -103,7 +104,7 @@ public class CharacterAction : MonoBehaviour
         }
     }
 
-    public void ShootPistol()
+    void ShootPistol()
     {
         if (inputManager.bIsAim && inputManager.bIsNormalAttack)
         {
@@ -135,5 +136,10 @@ public class CharacterAction : MonoBehaviour
     {
         yield return new WaitForSeconds(PistolFire_Anim.length);
         bIsPistolFire = false;
+    }
+
+    private void OnDestroy()
+    {
+        inputManager.OnNormalAttackEvent -= ShootPistol;
     }
 }

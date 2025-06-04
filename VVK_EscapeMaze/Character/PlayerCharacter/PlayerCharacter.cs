@@ -5,10 +5,21 @@ public class PlayerCharacter : MonoBehaviour
     CharacterMovement characterMovement;
     CharacterAction characterAction;
 
+    public float maxHealth { get; private set; } = 100.0f;
+    public float currentHealth { get; private set; }
+
+
+    public bool bIsDead { get; private set; } = false;
+    public float SkillPoint { get; private set; }
+
+    public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
+    public event OnHealthChangedDelegate OnHealthChanged;
+
     void Awake()
     {
         characterMovement = GetComponent<CharacterMovement>();
         characterAction = GetComponent<CharacterAction>();
+        InitPlayerCharacter();
     }
 
     void Update()
@@ -20,6 +31,15 @@ public class PlayerCharacter : MonoBehaviour
     void FixedUpdate()
     {
         characterMovement.Move();
-        characterAction.ShootPistol();
+    }
+    void InitPlayerCharacter()
+    {
+        currentHealth = maxHealth;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    public void SetSkillPoint(float value)
+    {
+        SkillPoint = value;
     }
 }
