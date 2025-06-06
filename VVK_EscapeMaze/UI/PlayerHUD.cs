@@ -6,6 +6,7 @@ public class PlayerHUD : MonoBehaviour
     [Header("UI Component")]
     public GameObject PlayerHealthBar;
     public GameObject PlayerSkillPoint;
+    public GameObject PlayerEquipSkill;
 
     [Header("Owner Component")]
     public GameObject PlayerCharacter;
