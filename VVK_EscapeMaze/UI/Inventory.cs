@@ -3,6 +3,7 @@ using UnityEngine;
 public class Inventory : MonoBehaviour
 {
     public InventoryPanel InventoryPanel;
+    public GameObject PlayerCharacter;
 
     void Awake()
     {
@@ -13,7 +14,7 @@ public class Inventory : MonoBehaviour
     {
         if (InventoryPanel)
         {
-            InventoryPanel.InitPanel();
+            InventoryPanel.InitPanel(PlayerCharacter.GetComponent<PlayerInventory>());
         }
     }
 

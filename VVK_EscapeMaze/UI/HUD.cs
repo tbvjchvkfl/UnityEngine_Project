@@ -7,17 +7,12 @@ public class HUD : MonoBehaviour
 
     void Awake()
     {
-        PlayerInventory.gameObject.SetActive(false);
+        PlayerInventory.gameObject.SetActive(true);
     }
 
     void Start()
     {
-        
-    }
-
-    void Update()
-    {
-        
+        PlayerInventory.gameObject.SetActive(false);
     }
 
     public void ToggleInventory()

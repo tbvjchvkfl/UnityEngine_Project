@@ -4,47 +4,33 @@ using UnityEngine;
 public class InventoryPanel : MonoBehaviour
 {
     public GameObject PanelItem;
-    public GameObject PlayerCharacter;
-
+    public int InventorySize;
 
     PlayerInventory InventoryCom;
-
     List<GameObject> itemList = new List<GameObject>();
-    List<ItemSlot> itemSlotList = new List<ItemSlot>();
 
-    void Awake()
+    
+    public void InitPanel(PlayerInventory InventoryComponent)
     {
-        
-    }
+        itemList.Clear();
 
-    void Start()
-    {
-        
-    }
-
-    void Update()
-    {
-        
-    }
-
-    public void InitPanel()
-    {
-        InventoryCom = PlayerCharacter.GetComponent<PlayerInventory>();
+        InventoryCom = InventoryComponent;
         InventoryCom.OnRefreshInventory += RefreshGrid;
-        Debug.Log("Init");
+
+        for (int i = 0; i < InventorySize; i++)
+        {
+            GameObject item = Instantiate(PanelItem, transform);
+            item.GetComponent<ItemSlot>().InitializeItem();
+            itemList.Add(item);
+        }
         RefreshGrid();
     }
 
     void RefreshGrid()
     {
-        Debug.Log("Refresh Inventory");
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < InventoryCom.ItemList.Count; i++)
         {
-            GameObject item = Instantiate(PanelItem, transform);
-            ItemSlot InventoryItem = item.GetComponent<ItemSlot>();
-            itemList.Add(item);
-            itemSlotList.Add(InventoryItem);
+            itemList[i].GetComponent<ItemSlot>().SetitemData(InventoryCom.ItemList[i].GetComponent<PickUpItem>());
         }
-        
     }
 }
