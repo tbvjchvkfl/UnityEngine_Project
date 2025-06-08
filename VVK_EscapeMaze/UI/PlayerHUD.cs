@@ -11,10 +11,6 @@ public class PlayerHUD : MonoBehaviour
     [Header("Owner Component")]
     public GameObject PlayerCharacter;
 
-
-    public Text playerCurHP_Text;
-    public Slider HPBar_Slider;
-
     SkillPoint_UI sp_UI;
     HPBar_UI hp_UI;
 
