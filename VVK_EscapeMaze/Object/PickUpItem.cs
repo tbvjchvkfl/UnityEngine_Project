@@ -1,3 +1,4 @@
+using NUnit.Framework.Interfaces;
 using UnityEngine;
 
 public class PickUpItem : MonoBehaviour
@@ -10,6 +11,7 @@ public class PickUpItem : MonoBehaviour
     public int itemQuantity { get; private set; }
     public int itemMaxQuantity { get; private set; }
 
+    // New Item Ver
     public void InitializePickUpItem(ItemBase ItemData)
     {
         itemType = ItemData.itemType;
@@ -24,8 +26,7 @@ public class PickUpItem : MonoBehaviour
         itemIcon = ItemData.itemAssetData.itemIcon;
 
 
-        // 이부분 공부해야함
-        if (ItemData.itemPrefabData.ItemPrefab != null)
+        if (ItemData.itemPrefabData.ItemPrefab)
         {
             MeshFilter sourceMeshFilter = ItemData.itemPrefabData.ItemPrefab.GetComponent<MeshFilter>();
             MeshRenderer sourceMeshRenderer = ItemData.itemPrefabData.ItemPrefab.GetComponent<MeshRenderer>();
@@ -42,6 +43,37 @@ public class PickUpItem : MonoBehaviour
             {
                 targetMeshRenderer.materials = sourceMeshRenderer.sharedMaterials;
             }
+        }
+    }
+
+    // Copy Item Ver
+    public void InitializePickUpItem(PickUpItem CopyItem)
+    {
+        itemType = CopyItem.itemType;
+
+        itemID = CopyItem.itemID;
+        itemName = CopyItem.itemName;
+        itemDescription = CopyItem.itemDescription;
+
+        itemQuantity = CopyItem.itemQuantity;
+        itemMaxQuantity = CopyItem.itemMaxQuantity;
+
+        itemIcon = CopyItem.itemIcon;
+
+        MeshFilter sourceMeshFilter = CopyItem.GetComponent<MeshFilter>();
+        MeshRenderer sourceMeshRenderer = CopyItem.GetComponent<MeshRenderer>();
+
+        MeshFilter targetMeshFilter = GetComponent<MeshFilter>();
+        MeshRenderer targetMeshRenderer = GetComponent<MeshRenderer>();
+
+        if (sourceMeshFilter != null && targetMeshFilter != null)
+        {
+            targetMeshFilter.mesh = sourceMeshFilter.sharedMesh;
+        }
+
+        if (sourceMeshRenderer != null && targetMeshRenderer != null)
+        {
+            targetMeshRenderer.materials = sourceMeshRenderer.sharedMaterials;
         }
     }
 
