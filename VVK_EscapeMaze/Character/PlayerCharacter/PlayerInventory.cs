@@ -6,7 +6,7 @@ public class PlayerInventory : MonoBehaviour
     public GameObject PoolObject;
 
     public int InventorySize { get; private set; }
-    public List<GameObject> ItemList { get; private set; }
+    public List<PickUpItem> ItemList { get; private set; }
 
     // Delegate for Refreshing Inventory
     public delegate void RefreshInventoryDelegate();
@@ -26,26 +26,23 @@ public class PlayerInventory : MonoBehaviour
     void InitializeInventory()
     {
         InventorySize = 10;
-        ItemList = new List<GameObject>();
+        ItemList = new List<PickUpItem>();
         if (PoolObject)
         {
             itemPool = PoolObject.GetComponent<PickupItemPool>();
         }
     }
 
-    void AddItem(GameObject ItemObject)
+    void AddItem(PickUpItem NewItem)
     {
         if (ItemList.Count < InventorySize)
         {
-            PickUpItem NewItem = ItemObject.GetComponent<PickUpItem>();
-            int RemainingQuantity = NewItem.itemQuantity;
-
-            foreach (GameObject Item in ItemList)
+            int RemainingQuantity = 0;
+            foreach (PickUpItem ListItem in ItemList)
             {
-                PickUpItem ListItem = Item.GetComponent<PickUpItem>();
                 if (ListItem.itemID == NewItem.itemID && ListItem.itemQuantity < ListItem.itemMaxQuantity)
                 {
-                    ListItem.SetItemQuantity(RemainingQuantity, out RemainingQuantity);
+                    ListItem.SetItemQuantity(NewItem.itemQuantity, out RemainingQuantity);
 
                     if (RemainingQuantity <= 0)
                     {
@@ -57,21 +54,20 @@ public class PlayerInventory : MonoBehaviour
             while (RemainingQuantity > 0 && CheckInventorySpace())
             {
                 int QuantityforAdd = Mathf.Min(RemainingQuantity, NewItem.itemMaxQuantity);
-                GameObject NewItemObj = itemPool.UseItemPool();
-
-                if (NewItemObj)
+                GameObject CopyItemObj = itemPool.UseItemPool();
+                if (CopyItemObj)
                 {
-                    PickUpItem NewPickUpItem = NewItemObj.GetComponent<PickUpItem>();
-                    NewPickUpItem.InitializePickUpItem(NewItem);
-                    NewPickUpItem.ModifyItemQuantity(QuantityforAdd);
-                    ItemList.Add(NewItemObj);
+                    PickUpItem CopyPickUpItem = CopyItemObj.GetComponent<PickUpItem>();
+                    CopyPickUpItem.InitializePickUpItem(NewItem);
+                    CopyPickUpItem.ModifyItemQuantity(QuantityforAdd);
+                    ItemList.Add(CopyPickUpItem);
                 }
 
                 RemainingQuantity -= QuantityforAdd;
+                itemPool.ReturnItemPool(CopyItemObj);
             }
 
             OnRefreshInventory?.Invoke();
-            itemPool.ReturnItemPool(ItemObject);
         }
     }
 
@@ -92,7 +88,9 @@ public class PlayerInventory : MonoBehaviour
     {
         if (item)
         {
-            AddItem(item);
+            PickUpItem itemData = item.GetComponent<PickUpItem>();
+            AddItem(itemData);
+            itemPool.ReturnItemPool(item);
         }
     }
 }
