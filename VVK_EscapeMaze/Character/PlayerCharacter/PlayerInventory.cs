@@ -21,6 +21,7 @@ public class PlayerInventory : MonoBehaviour
 
     void Update()
     {
+        Debug.Log(ItemList.Count);
     }
 
     void InitializeInventory()
@@ -37,12 +38,12 @@ public class PlayerInventory : MonoBehaviour
     {
         if (ItemList.Count < InventorySize)
         {
-            int RemainingQuantity = 0;
+            int RemainingQuantity = NewItem.itemQuantity;
             foreach (PickUpItem ListItem in ItemList)
             {
                 if (ListItem.itemID == NewItem.itemID && ListItem.itemQuantity < ListItem.itemMaxQuantity)
                 {
-                    ListItem.SetItemQuantity(NewItem.itemQuantity, out RemainingQuantity);
+                    RemainingQuantity = ListItem.SetItemQuantity(NewItem.itemQuantity);
 
                     if (RemainingQuantity <= 0)
                     {
