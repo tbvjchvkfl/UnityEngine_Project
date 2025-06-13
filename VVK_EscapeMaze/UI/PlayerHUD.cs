@@ -1,37 +1,29 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerHUD : MonoBehaviour
 {
     [Header("UI Component")]
-    public GameObject PlayerHealthBar;
-    public GameObject PlayerSkillPoint;
+    public GameObject PlayerHealthBarUIObj;
+    public GameObject PlayerSkillPointUIObj;
     public GameObject PlayerEquipSkill;
-
-    [Header("Owner Component")]
-    public GameObject PlayerCharacter;
 
     SkillPoint_UI sp_UI;
     HPBar_UI hp_UI;
 
-
-    float playerCurHP;
-    float playerMaxHP;
-
-    void Awake()
+    public void InitializePlayerHUD(GameObject owner)
     {
-        sp_UI = PlayerSkillPoint.GetComponent<SkillPoint_UI>();
-        hp_UI = PlayerHealthBar.GetComponent<HPBar_UI>();
-    }
-
-    void Start()
-    {
-        sp_UI.InitSkillPointTray(PlayerCharacter);
-        hp_UI.InitHPBar(PlayerCharacter);
-    }
-
-    void Update()
-    {
-        
+        if (owner)
+        {
+            if (PlayerHealthBarUIObj)
+            {
+                hp_UI = PlayerHealthBarUIObj.GetComponent<HPBar_UI>();
+                hp_UI.InitHPBar(owner);
+            }
+            if (PlayerSkillPointUIObj)
+            {
+                sp_UI = PlayerSkillPointUIObj.GetComponent<SkillPoint_UI>();
+                sp_UI.InitSkillPointTray(owner);
+            }
+        }
     }
 }
