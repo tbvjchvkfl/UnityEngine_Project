@@ -1,4 +1,3 @@
-using NUnit.Framework.Interfaces;
 using UnityEngine;
 
 public class PickUpItem : MonoBehaviour
@@ -8,6 +7,9 @@ public class PickUpItem : MonoBehaviour
     public Sprite itemIcon { get; private set; }
     public string itemName { get; private set; }
     public string itemDescription { get; private set; }
+    public int recoverHealthPoint { get; private set; }
+    public int recoverSkillPoint { get; private set; }
+    public int equipItemRate { get; private set; }
     public int itemQuantity { get; private set; }
     public int itemMaxQuantity { get; private set; }
 
@@ -20,6 +22,9 @@ public class PickUpItem : MonoBehaviour
         itemName = ItemData.itemBasicData.itemName;
         itemDescription = ItemData.itemBasicData.itemDescription;
 
+        recoverHealthPoint = ItemData.itemNumericData.RecoverHealthPoint;
+        recoverSkillPoint = ItemData.itemNumericData.RecoverSkillPoint;
+        equipItemRate = ItemData.itemNumericData.EquipItemRate;
         itemQuantity = ItemData.itemNumericData.itemQuantity;
         itemMaxQuantity = ItemData.itemNumericData.itemMaxQuantity;
 
@@ -55,6 +60,9 @@ public class PickUpItem : MonoBehaviour
         itemName = CopyItem.itemName;
         itemDescription = CopyItem.itemDescription;
 
+        recoverHealthPoint = CopyItem.recoverHealthPoint;
+        recoverSkillPoint = CopyItem.recoverSkillPoint;
+        equipItemRate = CopyItem.equipItemRate;
         itemQuantity = CopyItem.itemQuantity;
         itemMaxQuantity = CopyItem.itemMaxQuantity;
 
@@ -77,8 +85,9 @@ public class PickUpItem : MonoBehaviour
         }
     }
 
-    public void SetItemQuantity(int newQuantity, out int RemainQuantity)
+    public int SetItemQuantity(int newQuantity)
     {
+        int RemainQuantity = 0;
         if (itemQuantity + newQuantity > itemMaxQuantity)
         {
             RemainQuantity = (itemQuantity + newQuantity) - itemMaxQuantity;
@@ -88,10 +97,17 @@ public class PickUpItem : MonoBehaviour
             RemainQuantity = 0;
         }
         itemQuantity = Mathf.Clamp(itemQuantity + newQuantity, 0, itemMaxQuantity);
+        return RemainQuantity;
     }
 
     public void ModifyItemQuantity(int newQuantity)
     {
         itemQuantity = newQuantity;
+    }
+
+    public void Use(out int itemRemainQuantity)
+    {
+        itemQuantity--;
+        itemRemainQuantity = itemQuantity;
     }
 }
