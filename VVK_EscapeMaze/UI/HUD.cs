@@ -2,28 +2,45 @@ using UnityEngine;
 
 public class HUD : MonoBehaviour
 {
-    public PlayerHUD InGameHUD;
-    public Inventory PlayerInventory;
+    public GameObject InGameHUD;
+    public GameObject Inventory;
+    public GameObject PlayerCharacter;
+
+
+    PlayerHUD playerHUD;
+    Inventory inventoryUI;
 
     void Awake()
     {
-        PlayerInventory.gameObject.SetActive(true);
+        if (InGameHUD)
+        {
+            playerHUD = InGameHUD.GetComponent<PlayerHUD>();
+        }
+        if (Inventory)
+        {
+            inventoryUI = Inventory.GetComponent<Inventory>();
+        }
     }
 
     void Start()
     {
-        PlayerInventory.gameObject.SetActive(false);
+        if (PlayerCharacter)
+        {
+            playerHUD.InitializePlayerHUD(PlayerCharacter);
+            inventoryUI.InitializeInventory(PlayerCharacter);
+        }
+        Inventory.SetActive(false);
     }
 
     public void ToggleInventory()
     {
-        if (PlayerInventory.gameObject.activeSelf)
+        if (Inventory.activeSelf)
         {
-            PlayerInventory.gameObject.SetActive(false);
+            Inventory.SetActive(false);
         }
         else
         {
-            PlayerInventory.gameObject.SetActive(true);
+            Inventory.SetActive(true);
         }
     }
 }

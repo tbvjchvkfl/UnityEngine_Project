@@ -6,15 +6,17 @@ public class DropDownMenu : MonoBehaviour
     public Text ButtonAText;
     public Text ButtonBText;
     public GameObject ButtonA;
-    public GameObject PlayerCharacter;
 
     PickUpItem currentItem;
     ItemSlot currentItemSlot;
 
     public int currentSlotIndex { get; private set; }
 
-    public delegate void OnDestroyItemDelegate(int slotIndex);
-    public event OnDestroyItemDelegate OnDestroyItemEvent;
+    public delegate void OnUseItemNoticeDelegate(int slotIndex);
+    public event OnUseItemNoticeDelegate OnUseItemNoticeEvent;
+
+    public delegate void OnDestroyItemNoticeDelegate(int slotIndex);
+    public event OnDestroyItemNoticeDelegate OnDestroyItemNoticeEvent;
 
     public void InitializeDropDownMenu(PickUpItem itemData, ItemSlot slot)
     {
@@ -32,7 +34,7 @@ public class DropDownMenu : MonoBehaviour
                 ButtonAText.text = "Use";
                 ButtonBText.text = "Destroy";
             }
-            else if (currentItem.itemType == ItemType.EQUIPMENT)
+            else if (currentItem.itemType == ItemType.WEAPON || currentItem.itemType == ItemType.GEAR)
             {
                 ButtonAText.text = "Equip";
                 ButtonBText.text = "Destroy";
@@ -60,7 +62,7 @@ public class DropDownMenu : MonoBehaviour
                 ButtonAText.text = "Use";
                 ButtonBText.text = "Destroy";
             }
-            else if (currentItem.itemType == ItemType.EQUIPMENT)
+            else if (currentItem.itemType == ItemType.WEAPON || currentItem.itemType == ItemType.GEAR)
             {
                 ButtonAText.text = "Equip";
                 ButtonBText.text = "Destroy";
@@ -75,23 +77,13 @@ public class DropDownMenu : MonoBehaviour
 
     public void OnClickedButtonA()
     {
-        if (currentItem.itemType == ItemType.CONSUMABLE)
-        {
-            ButtonAText.text = "Use";
-            ButtonBText.text = "Destroy";
-        }
-        else if (currentItem.itemType == ItemType.EQUIPMENT)
-        {
-            ButtonAText.text = "Equip";
-            ButtonBText.text = "Destroy";
-        }
+        OnUseItemNoticeEvent?.Invoke(currentSlotIndex);
         Destroy(this.gameObject);
     }
 
     public void OnClickedButtonB()
     {
-        OnDestroyItemEvent?.Invoke(currentSlotIndex);
-
+        OnDestroyItemNoticeEvent?.Invoke(currentSlotIndex);
         Destroy(this.gameObject);
     }
 }

@@ -2,24 +2,19 @@ using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
-    public InventoryPanel InventoryPanel;
-    public GameObject PlayerCharacter;
+    public GameObject ItemInventoryObj;
+    public GameObject EquipInventoryObj;
 
-    void Awake()
+
+    public void InitializeInventory(GameObject OwnerCharacter)
     {
-
-    }
-
-    void Start()
-    {
-        if (InventoryPanel)
+        if (ItemInventoryObj)
         {
-            InventoryPanel.InitPanel(PlayerCharacter.GetComponent<PlayerInventory>());
+            ItemInventoryObj.GetComponent<ItemInventory>().InitPanel(OwnerCharacter);
         }
-    }
-
-    void Update()
-    {
-        
+        if (EquipInventoryObj)
+        {
+            EquipInventoryObj.GetComponent<EquipInventory>().InitEquipInventory(OwnerCharacter);
+        }
     }
 }
