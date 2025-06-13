@@ -12,16 +12,16 @@ public class PlayerInventory : MonoBehaviour
     public delegate void RefreshInventoryDelegate();
     public event RefreshInventoryDelegate OnRefreshInventory;
 
+    public delegate void EquipWeaponDelegate(PickUpItem weaponItem);
+    public event EquipWeaponDelegate OnEquipWeaponEvent;
+    public delegate void EquipGearDelegate(PickUpItem gearItem);
+    public event EquipGearDelegate OnEquipGearEvent;
+
     PickupItemPool itemPool;
 
     void Awake()
     {
         InitializeInventory();
-    }
-
-    void Update()
-    {
-        Debug.Log(ItemList.Count);
     }
 
     void InitializeInventory()
@@ -34,14 +34,14 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-    void AddItem(PickUpItem NewItem)
+    public void AddItem(PickUpItem NewItem)
     {
         if (ItemList.Count < InventorySize)
         {
             int RemainingQuantity = NewItem.itemQuantity;
             foreach (PickUpItem ListItem in ItemList)
             {
-                if (ListItem.itemID == NewItem.itemID && ListItem.itemQuantity < ListItem.itemMaxQuantity)
+                if (ListItem.itemType == NewItem.itemType && ListItem.itemID == NewItem.itemID && ListItem.itemQuantity < ListItem.itemMaxQuantity)
                 {
                     RemainingQuantity = ListItem.SetItemQuantity(NewItem.itemQuantity);
 
@@ -52,22 +52,11 @@ public class PlayerInventory : MonoBehaviour
                 }
             }
 
-            while (RemainingQuantity > 0 && CheckInventorySpace())
+            if (RemainingQuantity > 0 && CheckInventorySpace())
             {
-                int QuantityforAdd = Mathf.Min(RemainingQuantity, NewItem.itemMaxQuantity);
-                GameObject CopyItemObj = itemPool.UseItemPool();
-                if (CopyItemObj)
-                {
-                    PickUpItem CopyPickUpItem = CopyItemObj.GetComponent<PickUpItem>();
-                    CopyPickUpItem.InitializePickUpItem(NewItem);
-                    CopyPickUpItem.ModifyItemQuantity(QuantityforAdd);
-                    ItemList.Add(CopyPickUpItem);
-                }
-
-                RemainingQuantity -= QuantityforAdd;
-                itemPool.ReturnItemPool(CopyItemObj);
+                NewItem.ModifyItemQuantity(RemainingQuantity);
+                ItemList.Add(NewItem);
             }
-
             OnRefreshInventory?.Invoke();
         }
     }
@@ -93,5 +82,50 @@ public class PlayerInventory : MonoBehaviour
             AddItem(itemData);
             itemPool.ReturnItemPool(item);
         }
+    }
+
+    public void UseItem(int listIndex)
+    {
+        int RemainQuantity = 0;
+        ItemList[listIndex].Use(out RemainQuantity);
+
+        switch (ItemList[listIndex].itemType)
+        {
+            case ItemType.CONSUMABLE:
+                UseConsumableItem(ItemList[listIndex]);
+                break;
+            case ItemType.WEAPON:
+                UseWeaponItem(ItemList[listIndex]);
+                break;
+            case ItemType.GEAR:
+                UseGearItem(ItemList[listIndex]);
+                break;
+            default:
+                Debug.Log("Unknown Item Type");
+                break;
+        }
+
+        if (RemainQuantity <= 0)
+        {
+            ItemList.RemoveAt(listIndex);
+        }
+    }
+
+    void UseConsumableItem(PickUpItem UseItem)
+    {
+        if (UseItem)
+        {
+            gameObject.GetComponent<PlayerCharacter>().ApplyItemEffect(UseItem.recoverHealthPoint, UseItem.recoverSkillPoint);
+        }
+    }
+
+    void UseWeaponItem(PickUpItem UseItem)
+    {
+        OnEquipWeaponEvent?.Invoke(UseItem);
+    }
+
+    void UseGearItem(PickUpItem UseItem)
+    {
+        OnEquipGearEvent?.Invoke(UseItem);
     }
 }

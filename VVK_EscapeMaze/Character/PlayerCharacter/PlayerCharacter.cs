@@ -13,11 +13,13 @@ public class PlayerCharacter : MonoBehaviour
 
     public float maxHealth { get; private set; } = 100.0f;
     public float currentHealth { get; private set; }
-
+    public int maxSkillPoint { get; private set; } = 13;
+    public int currentSkillPoint { get; private set; }
 
     public bool bIsDead { get; private set; } = false;
-    public float SkillPoint { get; private set; }
 
+    
+    
     public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
     public event OnHealthChangedDelegate OnHealthChanged;
 
@@ -75,8 +77,15 @@ public class PlayerCharacter : MonoBehaviour
         }
     }
 
-    public void SetSkillPoint(float value)
+    public void SetSkillPoint(int value)
     {
-        SkillPoint = value;
+        currentSkillPoint = value;
+    }
+
+    public void ApplyItemEffect(float ItemHealthPoint, int ItemSkillPoint)
+    {
+        currentHealth = Mathf.Clamp(currentHealth + ItemHealthPoint, 0.0f, maxHealth);
+
+        currentSkillPoint = Mathf.Clamp(currentSkillPoint + ItemSkillPoint, 0, maxSkillPoint);
     }
 }
