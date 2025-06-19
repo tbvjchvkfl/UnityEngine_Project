@@ -16,11 +16,11 @@ public class SettingMenu : MonoBehaviour
 
     GraphicSet graphicMenu;
     SoundSet soundMenu;
+    PlayerCharacter playerCharacter;
 
-
-    public void InitializeSettingMenu()
+    public void InitializeSettingMenu(GameObject owner)
     {
-        InitComponent();
+        InitComponent(owner);
 
         Control_Btn.onClick.AddListener(OnClickedControlButton);
         Graphic_Btn.onClick.AddListener(OnClickedGraphicButton);
@@ -30,26 +30,33 @@ public class SettingMenu : MonoBehaviour
         EventSystem.current.SetSelectedGameObject(Control_Btn.gameObject);
     }
 
-    void InitComponent()
+    void InitComponent(GameObject owner)
     {
-        if (ControlMenu)
+        if (owner)
         {
+            playerCharacter = owner.GetComponent<PlayerCharacter>();
 
-        }
-        if (GraphicMenu)
-        {
-            graphicMenu = GraphicMenu.GetComponent<GraphicSet>();
-            graphicMenu.InitGraphicSet();
+            if (ControlMenu)
+            {
+                ControlMenu.SetActive(false);
+            }
+            if (GraphicMenu)
+            {
+                graphicMenu = GraphicMenu.GetComponent<GraphicSet>();
+                graphicMenu.InitGraphicSet(owner);
+                GraphicMenu.SetActive(false);
 
-        }
-        if (SoundMenu)
-        {
-            soundMenu = SoundMenu.GetComponent<SoundSet>();
-            soundMenu.InitSoundSet();
-        }
-        if (ReturnMenu)
-        {
-
+            }
+            if (SoundMenu)
+            {
+                soundMenu = SoundMenu.GetComponent<SoundSet>();
+                soundMenu.InitSoundSet();
+                SoundMenu.SetActive(false);
+            }
+            if (ReturnMenu)
+            {
+                ReturnMenu.SetActive(false);
+            }
         }
     }
 
