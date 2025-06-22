@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class ScreenResolutionSet : MonoBehaviour
@@ -70,6 +71,7 @@ public class ScreenResolutionSet : MonoBehaviour
             }
         }
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ResolutionSet_Btn.gameObject);
     }
 
     void OnClicedQHD_Btn()
@@ -84,6 +86,7 @@ public class ScreenResolutionSet : MonoBehaviour
             }
         }
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ResolutionSet_Btn.gameObject);
     }
 
     void OnClicedFHD_Btn()
@@ -98,6 +101,7 @@ public class ScreenResolutionSet : MonoBehaviour
             }
         }
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ResolutionSet_Btn.gameObject);
     }
 
     void OnClicedHD_Btn()
@@ -112,6 +116,7 @@ public class ScreenResolutionSet : MonoBehaviour
             }
         }
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ResolutionSet_Btn.gameObject);
     }
 
     void OnClicedLeftArrow_Btn()

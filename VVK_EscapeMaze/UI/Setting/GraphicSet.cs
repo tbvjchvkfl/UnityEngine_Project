@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class GraphicSet : MonoBehaviour
@@ -12,8 +13,8 @@ public class GraphicSet : MonoBehaviour
     ScreenResolutionSet screenResolutionUI;
     ScreenBrightnessSet screenBrightnessUI;
 
-    
-    
+    public delegate void OnExitFocusDelegate();
+    public event OnExitFocusDelegate ExitFocusEvent;
 
     public void InitGraphicSet(GameObject player)
     {
@@ -23,6 +24,7 @@ public class GraphicSet : MonoBehaviour
             {
                 screenModeUI = ScreenModeObject.GetComponent<ScreenModeSet>();
                 screenModeUI.InitScreenModeUI();
+                screenModeUI.OnExitFocusEvent += ReturnFocusGraphicSet;
             }
             if (ScreenResolutionObject)
             {
@@ -35,5 +37,18 @@ public class GraphicSet : MonoBehaviour
                 screenBrightnessUI.InitScreenBrightness();
             }
         }
+    }
+
+    public void SetDefaultFocus()
+    {
+        if (screenModeUI)
+        {
+            EventSystem.current.SetSelectedGameObject(screenModeUI.ScreenMode_Btn.gameObject);
+        }
+    }
+
+    void ReturnFocusGraphicSet()
+    {
+        ExitFocusEvent?.Invoke();
     }
 }

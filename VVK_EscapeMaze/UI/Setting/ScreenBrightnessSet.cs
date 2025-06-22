@@ -9,6 +9,14 @@ public class ScreenBrightnessSet : MonoBehaviour
     public Button LeftArrow_Btn;
     public Button RightArrow_Btn; 
 
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+
+        }
+    }
+
     public void InitScreenBrightness()
     {
         BrightnessSlider.minValue = 0.0f;

@@ -17,6 +17,7 @@ public class SettingMenu : MonoBehaviour
     GraphicSet graphicMenu;
     SoundSet soundMenu;
     PlayerCharacter playerCharacter;
+    
 
     public void InitializeSettingMenu(GameObject owner)
     {
@@ -44,6 +45,7 @@ public class SettingMenu : MonoBehaviour
             {
                 graphicMenu = GraphicMenu.GetComponent<GraphicSet>();
                 graphicMenu.InitGraphicSet(owner);
+                graphicMenu.ExitFocusEvent += SetOutGraphicFocus;
                 GraphicMenu.SetActive(false);
 
             }
@@ -66,6 +68,7 @@ public class SettingMenu : MonoBehaviour
         GraphicMenu.SetActive(false);
         SoundMenu.SetActive(false);
         ReturnMenu.SetActive(false);
+        ModifyingButtonColor(Control_Btn);
     }
 
     public void OnClickedGraphicButton()
@@ -74,6 +77,8 @@ public class SettingMenu : MonoBehaviour
         GraphicMenu.SetActive(true);
         SoundMenu.SetActive(false);
         ReturnMenu.SetActive(false);
+        graphicMenu.SetDefaultFocus();
+        ModifyingButtonColor(Graphic_Btn);
     }
 
     public void OnClickedSoundButton()
@@ -82,6 +87,7 @@ public class SettingMenu : MonoBehaviour
         GraphicMenu.SetActive(false);
         SoundMenu.SetActive(true);
         ReturnMenu.SetActive(false);
+        ModifyingButtonColor(Sound_Btn);
     }
 
     public void OnClickedReturnButton()
@@ -90,5 +96,60 @@ public class SettingMenu : MonoBehaviour
         GraphicMenu.SetActive(false);
         SoundMenu.SetActive(false);
         ReturnMenu.SetActive(true);
+        ModifyingButtonColor(Return_Btn);
+    }
+
+    void ModifyingButtonColor(Button SelectButton)
+    {
+        ColorBlock Con_Btn = Control_Btn.colors;
+        ColorBlock Graph_Btn = Graphic_Btn.colors;
+        ColorBlock Sou_Btn = Sound_Btn.colors;
+        ColorBlock Ret_Btn = Return_Btn.colors;
+
+        if (SelectButton == Control_Btn)
+        {
+            Con_Btn.normalColor = new Color(0.2f, 1.0f, 0.0f, 1.0f);
+            Graph_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Sou_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Ret_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (SelectButton == Graphic_Btn)
+        {
+            Graph_Btn.normalColor = new Color(0.2f, 1.0f, 0.0f, 1.0f);
+            Con_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Sou_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Ret_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (SelectButton == Sound_Btn)
+        {
+            Sou_Btn.normalColor = new Color(0.2f, 1.0f, 0.0f, 1.0f);
+            Con_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Graph_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Ret_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (SelectButton == Return_Btn)
+        {
+            Con_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Graph_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Sou_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Ret_Btn.normalColor = new Color(0.2f, 1.0f, 0.0f, 1.0f);
+        }
+        else
+        {
+            Con_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Graph_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Sou_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+            Ret_Btn.normalColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        Control_Btn.colors = Con_Btn;
+        Graphic_Btn.colors = Graph_Btn;
+        Sound_Btn.colors = Sou_Btn;
+        Return_Btn.colors = Ret_Btn;
+    }
+
+    void SetOutGraphicFocus()
+    {
+        EventSystem.current.SetSelectedGameObject(Graphic_Btn.gameObject);
+        ModifyingButtonColor(null);
     }
 }

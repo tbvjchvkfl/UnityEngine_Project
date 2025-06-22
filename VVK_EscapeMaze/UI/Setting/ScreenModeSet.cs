@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class ScreenModeSet : MonoBehaviour
@@ -15,8 +17,26 @@ public class ScreenModeSet : MonoBehaviour
     public Button BorderlessFullScreen_Btn;
     public Button WindowScreen_Btn;
 
+    public delegate void OnExitFocusDelegate();
+    public event OnExitFocusDelegate OnExitFocusEvent;
+
     List<FullScreenMode> ScreenModeList = new List<FullScreenMode>();
     int ListIndex = 2;
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (DropMenu.activeSelf)
+            {
+                DropMenu.SetActive(false);
+            }
+            else
+            {
+                OnExitFocusEvent?.Invoke();
+            }
+        }
+    }
 
     public void InitScreenModeUI()
     {
@@ -36,6 +56,7 @@ public class ScreenModeSet : MonoBehaviour
         LeftArrow_Btn.onClick.AddListener(OnClickedLeftArrow_Btn);
         RightArrow_Btn.onClick.AddListener(OnClickedRightArrow_Btn);
         ScreenMode_Btn.onClick.AddListener(OnClickedScreenMode_Btn);
+
     }
 
     void OnClickedFullScreen_Btn()
@@ -44,6 +65,7 @@ public class ScreenModeSet : MonoBehaviour
         ListIndex = 2;
         TitleText.text = "Full Screen";
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ScreenMode_Btn.gameObject);
     }
 
     void OnClickedBorderlessFullScreen_Btn()
@@ -52,6 +74,7 @@ public class ScreenModeSet : MonoBehaviour
         ListIndex = 1;
         TitleText.text = "Borderless FullScreen";
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ScreenMode_Btn.gameObject);
     }
 
     void OnClickedWindowScreen_Btn()
@@ -60,6 +83,7 @@ public class ScreenModeSet : MonoBehaviour
         ListIndex = 0;
         TitleText.text = "Window";
         DropMenu.SetActive(false);
+        EventSystem.current.SetSelectedGameObject(ScreenMode_Btn.gameObject);
     }
 
     void OnClickedLeftArrow_Btn()
