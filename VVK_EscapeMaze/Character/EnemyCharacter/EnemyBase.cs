@@ -27,7 +27,7 @@ public class EnemyBase : MonoBehaviour
 
     void FixedUpdate()
     {
-        Move();
+        //Move();
     }
 
     void ApplyGravity()
