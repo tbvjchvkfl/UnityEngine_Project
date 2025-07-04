@@ -1,3 +1,5 @@
+using Unity.VisualScripting;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -13,17 +15,25 @@ public class IdleState : IEnemyState
     float DelayTime = 0.0f;
     public void EnterState(EnemyStateMachine stateMachine)
     {
-        stateMachine.FindRandomLocation();
+        DelayTime = 0.0f;
+        stateMachine.FindDestination();
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
         DelayTime += Time.deltaTime;
-        if (DelayTime > 1.5f)
+        if (DelayTime > 1.0f)
         {
             if (stateMachine.bIsRecognize)
             {
-                stateMachine.ModifyState(new AttackState());
+                if (Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 2.0f)
+                {
+                    stateMachine.ModifyState(new AttackState());
+                }
+                else
+                {
+                    stateMachine.ModifyState(new MoveState());
+                }
             }
             else
             {
@@ -42,28 +52,45 @@ public class MoveState : IEnemyState
 {
     public void EnterState(EnemyStateMachine stateMachine)
     {
-
+        if (stateMachine.bIsRecognize)
+        {
+            stateMachine.animationController.SetTrigger("Roar");
+        }
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
         if (stateMachine.bIsRecognize)
         {
-
+            ChaseTargetLocation(stateMachine);
         }
         else
         {
-            stateMachine.MovetoTargetLocation(stateMachine.desiredMoveLocation);
-            if (Vector3.Distance(stateMachine.transform.position, stateMachine.desiredMoveLocation) <= 2.0f)
-            {
-                stateMachine.ModifyState(new IdleState());
-            }
+            MovetoRandomLocation(stateMachine);
         }
     }
 
     public void ExitState(EnemyStateMachine stateMachine)
     {
 
+    }
+
+    void ChaseTargetLocation(EnemyStateMachine SM)
+    {
+        SM.navAgent.SetDestination(SM.TargetLocation);
+        if (Vector3.Distance(SM.transform.position, SM.TargetLocation) <= SM.navAgent.stoppingDistance)
+        {
+            SM.ModifyState(new AttackState());
+        }
+    }
+
+    void MovetoRandomLocation(EnemyStateMachine SM)
+    {
+        SM.navAgent.SetDestination(SM.desiredMoveLocation);
+        if (Vector3.Distance(SM.transform.position, SM.desiredMoveLocation) <= SM.navAgent.stoppingDistance)
+        {
+            SM.ModifyState(new IdleState());
+        }
     }
 }
 
@@ -71,17 +98,30 @@ public class AttackState : IEnemyState
 {
     public void EnterState(EnemyStateMachine stateMachine)
     {
-
+        stateMachine.bIsAttack = false;
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
-
+        if (Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 2.0f)
+        {
+            Debug.Log("Attack");
+            stateMachine.bIsAttack = true;
+            stateMachine.ModifyState(new IdleState());
+        }
+        else
+        {
+            stateMachine.bIsAttack = false;
+            stateMachine.ModifyState(new MoveState());
+        }
     }
 
     public void ExitState(EnemyStateMachine stateMachine)
     {
-
+        if (stateMachine.bIsAttack)
+        {
+            stateMachine.bIsAttack = false;
+        }
     }
 }
 
@@ -108,21 +148,25 @@ public class EnemyStateMachine : MonoBehaviour
     GameObject TargetEnemy;
     SphereCollider perceptionCollider;
     EnemyBase characterBase;
+    
 
     IEnemyState currentState;
-    NavMeshAgent navAgent;
+
+    public NavMeshAgent navAgent { get; private set; }
+    public Animator animationController { get; private set; }
 
     public Vector3 desiredMoveLocation { get; private set; } = Vector3.zero;
     public Vector3 TargetLocation { get; private set; } = Vector3.zero;
 
-    public bool bIsRecognize { get; private set; } = false;
+    public bool bIsRecognize { get; set; } = false;
+    public bool bIsAttack { get; set; } = false;
 
     void Awake()
     {
         navAgent = GetComponent<NavMeshAgent>();
         perceptionCollider = GetComponent<SphereCollider>();
+        animationController = GetComponent<Animator>();
         characterBase = GetComponent<EnemyBase>();
-
 
         currentState = new IdleState();
         currentState.EnterState(this);
@@ -130,8 +174,19 @@ public class EnemyStateMachine : MonoBehaviour
 
     void Update()
     {
+        Debug.Log("Distance : " + Vector3.Distance(transform.position, TargetLocation));
+        SetAnimData();
         currentState.LoopState(this);
         Debug.DrawLine(transform.position, desiredMoveLocation, Color.red);
+    }
+
+    void SetAnimData()
+    {
+        animationController.SetBool("Move", navAgent.velocity.magnitude > 0.1f);
+        animationController.SetBool("Attack", bIsAttack);
+
+        animationController.SetFloat("Idle State Index", Random.Range(0, 1));
+        animationController.SetFloat("Moving Index", bIsRecognize ? 1 : 0);
     }
 
     public void ModifyState(IEnemyState newState)
@@ -144,24 +199,33 @@ public class EnemyStateMachine : MonoBehaviour
         }
     }
 
-    public void FindRandomLocation()
+    public void FindDestination()
     {
-        Vector3 RandomLocation = Random.insideUnitSphere * perceptionCollider.radius;
-        RandomLocation.y = 0.0f;
-
-        Vector3 CorePosition = transform.position + RandomLocation;
-
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(CorePosition, out hit, perceptionCollider.radius, NavMesh.AllAreas))
+        if (bIsRecognize)
         {
-            desiredMoveLocation = hit.position;
+            if (TargetEnemy)
+            {
+                desiredMoveLocation = TargetEnemy.transform.position;
+            }
         }
-        //desiredMoveLocation = RandomLocation;
+        else
+        {
+            Vector3 RandomLocation = Random.insideUnitSphere * perceptionCollider.radius;
+            RandomLocation.y = 0.0f;
+
+            Vector3 CorePosition = transform.position + RandomLocation;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(CorePosition, out hit, perceptionCollider.radius, NavMesh.AllAreas))
+            {
+                desiredMoveLocation = hit.position;
+            }
+        }
     }
 
-    public void MovetoTargetLocation(Vector3 targetLocation)
+    public void OnAttackBinding()
     {
-        navAgent.SetDestination(targetLocation);
+
     }
 
     void OnTriggerStay(Collider other)
