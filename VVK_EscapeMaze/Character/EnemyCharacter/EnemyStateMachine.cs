@@ -168,13 +168,15 @@ public class EnemyStateMachine : MonoBehaviour
         animationController = GetComponent<Animator>();
         characterBase = GetComponent<EnemyBase>();
 
+        navAgent.updateRotation = false;
+
         currentState = new IdleState();
         currentState.EnterState(this);
     }
 
     void Update()
     {
-        Debug.Log("Distance : " + Vector3.Distance(transform.position, TargetLocation));
+        SetCharacterRotation();
         SetAnimData();
         currentState.LoopState(this);
         Debug.DrawLine(transform.position, desiredMoveLocation, Color.red);
@@ -185,7 +187,7 @@ public class EnemyStateMachine : MonoBehaviour
         animationController.SetBool("Move", navAgent.velocity.magnitude > 0.1f);
         animationController.SetBool("Attack", bIsAttack);
 
-        animationController.SetFloat("Idle State Index", Random.Range(0, 1));
+        animationController.SetFloat("Idle State Index", Random.Range(0, 2));
         animationController.SetFloat("Moving Index", bIsRecognize ? 1 : 0);
     }
 
@@ -221,6 +223,11 @@ public class EnemyStateMachine : MonoBehaviour
                 desiredMoveLocation = hit.position;
             }
         }
+    }
+
+    void SetCharacterRotation()
+    {
+
     }
 
     public void OnAttackBinding()
