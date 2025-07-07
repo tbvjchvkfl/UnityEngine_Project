@@ -26,7 +26,7 @@ public class IdleState : IEnemyState
         {
             if (stateMachine.bIsRecognize)
             {
-                if (Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 2.0f)
+                if (!stateMachine.navAgent.pathPending && stateMachine.navAgent.remainingDistance <= stateMachine.navAgent.stoppingDistance)
                 {
                     stateMachine.ModifyState(new AttackState());
                 }
@@ -77,8 +77,9 @@ public class MoveState : IEnemyState
 
     void ChaseTargetLocation(EnemyStateMachine SM)
     {
+        SM.SetCharacterRotation();
         SM.navAgent.SetDestination(SM.TargetLocation);
-        if (Vector3.Distance(SM.transform.position, SM.TargetLocation) <= SM.navAgent.stoppingDistance)
+        if (!SM.navAgent.pathPending && SM.navAgent.remainingDistance <= SM.navAgent.stoppingDistance)
         {
             SM.ModifyState(new AttackState());
         }
@@ -86,8 +87,9 @@ public class MoveState : IEnemyState
 
     void MovetoRandomLocation(EnemyStateMachine SM)
     {
+        SM.SetCharacterRotation();
         SM.navAgent.SetDestination(SM.desiredMoveLocation);
-        if (Vector3.Distance(SM.transform.position, SM.desiredMoveLocation) <= SM.navAgent.stoppingDistance)
+        if (!SM.navAgent.pathPending && SM.navAgent.remainingDistance <= SM.navAgent.stoppingDistance)
         {
             SM.ModifyState(new IdleState());
         }
@@ -103,7 +105,7 @@ public class AttackState : IEnemyState
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
-        if (Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 2.0f)
+        if (!stateMachine.navAgent.pathPending && Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 2.0f)
         {
             Debug.Log("Attack");
             stateMachine.bIsAttack = true;
@@ -111,6 +113,7 @@ public class AttackState : IEnemyState
         }
         else
         {
+            Debug.Log("Not Distance");
             stateMachine.bIsAttack = false;
             stateMachine.ModifyState(new MoveState());
         }
@@ -169,6 +172,7 @@ public class EnemyStateMachine : MonoBehaviour
         characterBase = GetComponent<EnemyBase>();
 
         navAgent.updateRotation = false;
+        navAgent.angularSpeed = 100.0f;
 
         currentState = new IdleState();
         currentState.EnterState(this);
@@ -176,7 +180,6 @@ public class EnemyStateMachine : MonoBehaviour
 
     void Update()
     {
-        SetCharacterRotation();
         SetAnimData();
         currentState.LoopState(this);
         Debug.DrawLine(transform.position, desiredMoveLocation, Color.red);
@@ -187,7 +190,7 @@ public class EnemyStateMachine : MonoBehaviour
         animationController.SetBool("Move", navAgent.velocity.magnitude > 0.1f);
         animationController.SetBool("Attack", bIsAttack);
 
-        animationController.SetFloat("Idle State Index", Random.Range(0, 2));
+        //animationController.SetFloat("Idle State Index", Random.Range(0, 2));
         animationController.SetFloat("Moving Index", bIsRecognize ? 1 : 0);
     }
 
@@ -225,9 +228,16 @@ public class EnemyStateMachine : MonoBehaviour
         }
     }
 
-    void SetCharacterRotation()
+    public void SetCharacterRotation()
     {
+        Vector3 MovementDirection = navAgent.velocity;
+        MovementDirection.y = 0.0f;
 
+        if( MovementDirection.magnitude > 0.1f )
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(MovementDirection.normalized);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, navAgent.angularSpeed * Time.deltaTime);
+        }
     }
 
     public void OnAttackBinding()
