@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerCharacter : MonoBehaviour
@@ -9,16 +10,20 @@ public class PlayerCharacter : MonoBehaviour
     CharacterAction characterAction;
     PCInputManager inputManager;
     PlayerInventory playerInventory;
-    
+
+    Coroutine reactCoroutine = null;
 
     public float maxHealth { get; private set; } = 100.0f;
     public float currentHealth { get; private set; }
     public int maxSkillPoint { get; private set; } = 13;
-    public int currentSkillPoint { get; private set; }
+    public int currentSkillPoint { get; private set; } = 0;
+    public int technicalPoint { get; private set; } = 10;
 
-    public bool bIsDead { get; private set; } = false;
+    public float AttackRate { get; private set; }
+    public float ArmorRate { get; private set; }
+    public float AimRate { get; private set; }
 
-    
+    public bool bIsDead { get; set; } = false;
     
     public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
     public event OnHealthChangedDelegate OnHealthChanged;
@@ -37,6 +42,8 @@ public class PlayerCharacter : MonoBehaviour
     {
         inputManager.OnInteractionEvent += Interaction;
         inputManager.OnInventoryEvent += ShowInventory;
+        inputManager.OnLockOnEvent += ActiveLockOn;
+        inputManager.OnSkillEvent += UseSkill;
     }
 
     void Update()
@@ -49,6 +56,7 @@ public class PlayerCharacter : MonoBehaviour
     {
         characterMovement.Move();
     }
+
     void InitPlayerCharacter()
     {
         currentHealth = maxHealth;
@@ -57,16 +65,25 @@ public class PlayerCharacter : MonoBehaviour
 
     void Interaction()
     {
-        // ~0은 모든 레이어를 포함하라 라는 의미
-        Ray ray = new Ray(transform.position, CameraComponent.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, 1.0f, ~0, QueryTriggerInteraction.Collide))
+        if (!PlayerHUD.Inventory.activeSelf && !PlayerHUD.SkillTree.activeSelf && !PlayerHUD.SettingUI.activeSelf)
         {
-            if (hit.collider.CompareTag("Item"))
+            Ray ray = new Ray(transform.position, CameraComponent.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, 1.0f, ~0, QueryTriggerInteraction.Collide))
             {
-                playerInventory.CheckItem(hit.collider.gameObject);
+                if (hit.collider.CompareTag("Item"))
+                {
+                    playerInventory.CheckItem(hit.collider.gameObject);
+                }
+                if (hit.collider.CompareTag("InteractableObj"))
+                {
+                    hit.collider.gameObject.GetComponent<LinkingBridge>().StartLink();
+                }
             }
         }
-        Debug.DrawRay(transform.position, CameraComponent.transform.forward * 1.0f, Color.green, 2.0f);
+        else
+        {
+            PlayerHUD.RightChangedUIMenu();
+        }
     }
 
     void ShowInventory()
@@ -75,6 +92,23 @@ public class PlayerCharacter : MonoBehaviour
         {
             PlayerHUD.ToggleInventory();
         }
+    }
+
+    void ActiveLockOn()
+    {
+        if (!PlayerHUD.Inventory.activeSelf && !PlayerHUD.SkillTree.activeSelf && !PlayerHUD.SettingUI.activeSelf)
+        {
+
+        }
+        else
+        {
+            PlayerHUD.LeftChangedUIMenu();
+        }
+    }
+
+    void UseSkill()
+    {
+        
     }
 
     public void SetSkillPoint(int value)
@@ -87,5 +121,32 @@ public class PlayerCharacter : MonoBehaviour
         currentHealth = Mathf.Clamp(currentHealth + ItemHealthPoint, 0.0f, maxHealth);
 
         currentSkillPoint = Mathf.Clamp(currentSkillPoint + ItemSkillPoint, 0, maxSkillPoint);
+    }
+
+    public void ApplyCharacterStat(int TP, float Attack, float Armor, float Aim)
+    {
+        technicalPoint -= TP;
+        AttackRate += Attack;
+        ArmorRate += Armor;
+        AimRate += Aim;
+    }
+
+    public void TakeDamage(float damage)
+    {
+        currentHealth = Mathf.Clamp(currentHealth - damage, 0.0f, maxHealth);
+        inputManager.bIsHit = true;
+
+        if (reactCoroutine == null)
+        {
+            reactCoroutine = StartCoroutine(OnReact());
+        }
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    IEnumerator OnReact()
+    {
+        yield return new WaitForSeconds(0.55f);
+        inputManager.bIsHit = false;
     }
 }

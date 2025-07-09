@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class CharacterAnimation : MonoBehaviour
 {
@@ -8,8 +7,6 @@ public class CharacterAnimation : MonoBehaviour
 
     public GameObject head_Bone;
     public GameObject spine_Bone;
-    public GameObject clavicle_L;
-    public GameObject clavicle_R;
 
     PCInputManager inputManager;
     CharacterMovement characterMovement;
@@ -48,8 +45,9 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
         animationController.SetBool("Crouch", inputManager.bIsCrouch);
         animationController.SetBool("Aim", inputManager.bIsAim);
-        animationController.SetBool("Attack", inputManager.bIsAim && inputManager.bIsNormalAttack);
+        animationController.SetBool("Attack", inputManager.bIsNormalAttack);
         animationController.SetBool("Lock On", inputManager.bIsLockOn);
+        animationController.SetBool("Hit", inputManager.bIsHit);
 
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
@@ -108,15 +106,9 @@ public class CharacterAnimation : MonoBehaviour
         Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
 
         float moveAngle = Vector3.SignedAngle(transform.forward, desiredMoveDirection, Vector3.up);
-        //float finalAngle = moveAngle * -1.0f;
-        /*if((desiredMoveDirection.z < 0.0f && moveAngle > 0.0f) || 
-            (desiredMoveDirection.z > 0.0f && moveAngle < 0.0f) ||
-            (desiredMoveDirection.x < 0.0f && moveAngle > 0.0f)||
-            (desiredMoveDirection.x > 0.0f && moveAngle < 0.0f))
-        {
-            finalAngle = moveAngle * -1.0f;
-            Debug.Log("Reverse");
-        }*/
+
+        if (Mathf.Abs(moveAngle - 180.0f) < 1.0f)
+            moveAngle = -180.0f;
 
         return moveAngle;
     }
