@@ -8,11 +8,17 @@ public class EnemyBase : MonoBehaviour
     public float Gravity = -9.81f;
 
     CharacterController enemyController;
+    EnemyStateMachine enemyStateMachine;
     Vector3 movementDirection;
 
     void Awake()
     {
         CurrentHP = MaxHP;
+        enemyStateMachine = GetComponent<EnemyStateMachine>();
+        if (enemyStateMachine)
+        {
+            enemyStateMachine.OnTakeDamageEvent += RefreshHealthPoint;
+        }
     }
 
     void Start()
@@ -27,22 +33,11 @@ public class EnemyBase : MonoBehaviour
 
     void FixedUpdate()
     {
-        //Move();
+
     }
 
-    void ApplyGravity()
+    void RefreshHealthPoint(float damage)
     {
-        if (enemyController.isGrounded && movementDirection.y < 0.0f)
-        {
-            movementDirection.y = -2.0f;
-        }
-        movementDirection.y += Gravity * Time.deltaTime;
-    }
-
-    void Move()
-    {
-        ApplyGravity();
-
-        enemyController.Move(movementDirection * Time.deltaTime);
+        CurrentHP -= damage;
     }
 }

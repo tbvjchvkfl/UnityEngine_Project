@@ -3,6 +3,7 @@ using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.AI;
+using static UnityEngine.UI.GridLayoutGroup;
 
 public interface IEnemyState
 {
@@ -54,14 +55,15 @@ public class MoveState : IEnemyState
 {
     public void EnterState(EnemyStateMachine stateMachine)
     {
-        stateMachine.animationController.SetTrigger("Roar");
+        stateMachine.navAgent.isStopped = false;
         Debug.Log("Move");
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
-        if (!stateMachine.animationController.GetCurrentAnimatorStateInfo(0).IsName("Base Lyaer.Attack State"))
+        if (!stateMachine.animationController.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.Attack State"))
         {
+            stateMachine.navAgent.isStopped = false;
             SetMoveSpeed(stateMachine);
             if (stateMachine.bIsRecognize)
             {
@@ -74,7 +76,8 @@ public class MoveState : IEnemyState
         }
         else
         {
-            stateMachine.navAgent.speed = 0.0f;
+            stateMachine.navAgent.isStopped = true;
+            stateMachine.navAgent.velocity = Vector3.zero;
         }
     }
 
@@ -121,14 +124,15 @@ public class AttackState : IEnemyState
     public void EnterState(EnemyStateMachine stateMachine)
     {
         stateMachine.bIsAttack = false;
-        stateMachine.navAgent.speed = 0.0f;
+        stateMachine.navAgent.isStopped = true;
+        stateMachine.navAgent.velocity = Vector3.zero;
+        Debug.Log("Attack");
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
-        if (!stateMachine.navAgent.pathPending && Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 3.0f)
+        if (!stateMachine.navAgent.pathPending && Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 4.0f)
         {
-            Debug.Log("Attack");
             if (playAttackStateCoroutine == null)
             {
                 Vector3 targetDir = stateMachine.TargetLocation - stateMachine.transform.position;
@@ -192,9 +196,9 @@ public class ReactState : IEnemyState
 
 public class EnemyStateMachine : MonoBehaviour
 {
+    public BoxCollider AttackColliderSpike;
     GameObject TargetEnemy;
     SphereCollider perceptionCollider;
-    EnemyBase characterBase;
     
 
     IEnemyState currentState;
@@ -209,12 +213,17 @@ public class EnemyStateMachine : MonoBehaviour
     public bool bIsAttack { get; set; } = false;
     public bool bIsHit { get; set; } = false;
 
+    public delegate void OnTakeDamageDelegate(float damage);
+    public event OnTakeDamageDelegate OnTakeDamageEvent;
+
+    bool bIsAttackEndNotice = false;
+    Coroutine attackNotifyStateCoroutine = null;
+
     void Awake()
     {
         navAgent = GetComponent<NavMeshAgent>();
         perceptionCollider = GetComponent<SphereCollider>();
         animationController = GetComponent<Animator>();
-        characterBase = GetComponent<EnemyBase>();
 
         navAgent.updateRotation = false;
         navAgent.angularSpeed = 100.0f;
@@ -286,9 +295,57 @@ public class EnemyStateMachine : MonoBehaviour
         }
     }
 
-    public void OnAttackBinding()
+    private void OnDrawGizmos()
     {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(AttackColliderSpike.bounds.center, AttackColliderSpike.bounds.size);
+    }
 
+    public void OnAttackBegin()
+    {
+        if (attackNotifyStateCoroutine == null)
+        {
+            bIsAttackEndNotice = false;
+            Collider[] hits = Physics.OverlapBox(AttackColliderSpike.bounds.center, AttackColliderSpike.bounds.extents, Quaternion.identity, ~0);
+            foreach (var hitObject in hits)
+            {
+                if (hitObject.gameObject.CompareTag("Player"))
+                {
+                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(25.0f);
+                    bIsAttackEndNotice = true;
+                }
+            }
+            attackNotifyStateCoroutine = StartCoroutine(OnAttackTick());
+        }
+    }
+
+    IEnumerator OnAttackTick()
+    {
+        while (!bIsAttackEndNotice)
+        {
+            yield return null;
+            Collider[] hits = Physics.OverlapBox(AttackColliderSpike.bounds.center, AttackColliderSpike.bounds.extents, Quaternion.identity, ~0);
+
+            foreach (var hitObject in hits)
+            {
+                if(hitObject.gameObject.CompareTag("Player"))
+                {
+                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(25.0f);
+                    bIsAttackEndNotice = true;
+                }
+            }
+        }
+        attackNotifyStateCoroutine = null;
+    }
+
+    public void OnAttackEnd()
+    {
+        bIsAttackEndNotice = true;
+        if (attackNotifyStateCoroutine != null)
+        {
+            StopCoroutine(attackNotifyStateCoroutine);
+            attackNotifyStateCoroutine = null;
+        }
     }
 
     public void OnTakeDamage(float damage)
@@ -298,8 +355,7 @@ public class EnemyStateMachine : MonoBehaviour
             animationController.SetLayerWeight(1, 0.35f);
             bIsHit = true;
             StartCoroutine(OnHit());
-
-            // 체력 관련 로직 추가
+            OnTakeDamageEvent?.Invoke(damage);
         }
     }
 
