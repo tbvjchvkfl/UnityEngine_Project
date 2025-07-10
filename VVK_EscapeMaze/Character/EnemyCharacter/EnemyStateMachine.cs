@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEditorInternal;
 using UnityEngine;
@@ -69,6 +70,10 @@ public class MoveState : IEnemyState
             {
                 ChaseTargetLocation(stateMachine);
             }
+            else if(stateMachine.TargetLocationList.Count > 0 && !stateMachine.bIsRecognize)
+            {
+                PatrolTargetLocation(stateMachine);
+            }
             else
             {
                 MovetoRandomLocation(stateMachine);
@@ -106,6 +111,20 @@ public class MoveState : IEnemyState
         }
     }
 
+    void PatrolTargetLocation(EnemyStateMachine SM)
+    {
+        SM.SetCharacterRotation();
+        SM.navAgent.SetDestination(SM.TargetLocationList[SM.ListIndex].position);
+        if (!SM.navAgent.pathPending && SM.navAgent.remainingDistance <= SM.navAgent.stoppingDistance)
+        {
+            SM.ListIndex++;
+            if (SM.ListIndex >= SM.TargetLocationList.Count - 1)
+            {
+                SM.ListIndex = 0;
+            }
+        }
+    }
+
     void SetMoveSpeed(EnemyStateMachine owner)
     {
         owner.navAgent.speed = 1.5f;
@@ -131,7 +150,7 @@ public class AttackState : IEnemyState
 
     public void LoopState(EnemyStateMachine stateMachine)
     {
-        if (!stateMachine.navAgent.pathPending && Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 4.0f)
+        if (!stateMachine.navAgent.pathPending && Vector3.Distance(stateMachine.transform.position, stateMachine.TargetLocation) <= 3.5f)
         {
             if (playAttackStateCoroutine == null)
             {
@@ -197,17 +216,15 @@ public class ReactState : IEnemyState
 public class EnemyStateMachine : MonoBehaviour
 {
     public BoxCollider AttackColliderSpike;
-    GameObject TargetEnemy;
-    SphereCollider perceptionCollider;
-    
-
-    IEnemyState currentState;
+    public List<Transform> TargetLocationList = new List<Transform>();
 
     public NavMeshAgent navAgent { get; private set; }
     public Animator animationController { get; private set; }
 
     public Vector3 desiredMoveLocation { get; private set; } = Vector3.zero;
     public Vector3 TargetLocation { get; private set; } = Vector3.zero;
+
+    public int ListIndex { get; set; } = 0;
 
     public bool bIsRecognize { get; set; } = false;
     public bool bIsAttack { get; set; } = false;
@@ -216,10 +233,34 @@ public class EnemyStateMachine : MonoBehaviour
     public delegate void OnTakeDamageDelegate(float damage);
     public event OnTakeDamageDelegate OnTakeDamageEvent;
 
-    bool bIsAttackEndNotice = false;
     Coroutine attackNotifyStateCoroutine = null;
+    GameObject TargetEnemy;
+    SphereCollider perceptionCollider;
 
-    void Awake()
+    IEnemyState currentState;
+
+    float AttackRate = 0.0f;
+    float DefenseRate = 0.0f;
+    float DodgeRate = 0.0f;
+
+    bool bIsAttackEndNotice = false;
+    bool bIsInitSuccess = false;
+
+    void Update()
+    {
+        if (bIsInitSuccess)
+        {
+            SetAnimData();
+            currentState.LoopState(this);
+            Debug.DrawLine(transform.position, desiredMoveLocation, Color.red);
+        }
+        if (TargetEnemy)
+        {
+            TargetLocation = TargetEnemy.transform.position;
+        }
+    }
+
+    public void InitEssentialData(float AttackDam, float DefenseRa, float DodgeRa)
     {
         navAgent = GetComponent<NavMeshAgent>();
         perceptionCollider = GetComponent<SphereCollider>();
@@ -230,13 +271,12 @@ public class EnemyStateMachine : MonoBehaviour
 
         currentState = new IdleState();
         currentState.EnterState(this);
-    }
 
-    void Update()
-    {
-        SetAnimData();
-        currentState.LoopState(this);
-        Debug.DrawLine(transform.position, desiredMoveLocation, Color.red);
+        AttackRate = AttackDam;
+        DefenseRate = DefenseRa;
+        DodgeRate = DodgeRa;
+
+        bIsInitSuccess = true;
     }
 
     void SetAnimData()
@@ -311,7 +351,7 @@ public class EnemyStateMachine : MonoBehaviour
             {
                 if (hitObject.gameObject.CompareTag("Player"))
                 {
-                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(25.0f);
+                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(AttackRate);
                     bIsAttackEndNotice = true;
                 }
             }
@@ -330,12 +370,12 @@ public class EnemyStateMachine : MonoBehaviour
             {
                 if(hitObject.gameObject.CompareTag("Player"))
                 {
-                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(25.0f);
+                    hitObject.GetComponent<PlayerCharacter>().TakeDamage(AttackRate);
                     bIsAttackEndNotice = true;
                 }
             }
         }
-        attackNotifyStateCoroutine = null;
+        OnAttackEnd();
     }
 
     public void OnAttackEnd()
@@ -366,14 +406,13 @@ public class EnemyStateMachine : MonoBehaviour
         animationController.SetLayerWeight(1, 0.0f);
     }
 
-    void OnTriggerStay(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Player"))
         {
             bIsRecognize = true;
             perceptionCollider.radius = 10.0f;
             TargetEnemy = other.gameObject;
-            TargetLocation = other.gameObject.transform.position;
         }
     }
 
