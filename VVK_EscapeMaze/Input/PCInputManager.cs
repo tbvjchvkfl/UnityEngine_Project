@@ -14,6 +14,9 @@ public class PCInputManager : MonoBehaviour
     public bool bIsLockOn {  get; private set; }
     public bool bIsInteraction {  get; private set; }
 
+    // Non-Control
+    public bool bIsHit { get; set; } = false;
+
     // Delegates and Events
     public delegate void OnNormalAttackDelegate();
     public event OnNormalAttackDelegate OnNormalAttackEvent;
@@ -24,6 +27,12 @@ public class PCInputManager : MonoBehaviour
     public delegate void OnInventoryDelegate();
     public event OnInventoryDelegate OnInventoryEvent;
 
+    public delegate void OnLockOnDelegate();
+    public event OnLockOnDelegate OnLockOnEvent;
+
+    public delegate void OnSkillDelegate();
+    public event OnSkillDelegate OnSkillEvent;
+
     void Awake()
     {
         
@@ -31,7 +40,10 @@ public class PCInputManager : MonoBehaviour
 
     public void OnMove(InputValue inputValue)
     {
-        inputDirection = inputValue.Get<Vector2>();
+        if (!bIsHit)
+        {
+            inputDirection = inputValue.Get<Vector2>();
+        }
     }
 
     public void OnLook(InputValue inputValue)
@@ -41,7 +53,10 @@ public class PCInputManager : MonoBehaviour
 
     public void OnSprint(InputValue inputValue)
     {
-        bIsSprint = inputValue.isPressed;
+        if (!bIsHit)
+        {
+            bIsSprint = inputValue.isPressed;
+        }
     }
 
     public void OnChangeMoveState(InputValue inputValue)
@@ -58,27 +73,48 @@ public class PCInputManager : MonoBehaviour
 
     public void OnCrouch()
     {
-        if (bIsCrouch)
+        if (!bIsHit)
         {
-            bIsCrouch = false;
-        }
-        else
-        {
-            bIsCrouch = true;
+            if (bIsCrouch)
+            {
+                bIsCrouch = false;
+            }
+            else
+            {
+                bIsCrouch = true;
+            }
         }
     }
 
     public void OnAim(InputValue inputValue)
     {
-        bIsAim = inputValue.isPressed;
+        if (bIsHit)
+        {
+            bIsAim = false;
+        }
+        else
+        {
+            bIsAim = inputValue.isPressed;
+        }
     }
 
     public void OnAttack(InputValue inputValue)
     {
-        bIsNormalAttack = inputValue.isPressed;
-        if(bIsNormalAttack)
+        if (!bIsHit)
         {
-            OnNormalAttackEvent?.Invoke();
+            bIsNormalAttack = inputValue.isPressed;
+            if (bIsNormalAttack)
+            {
+                OnNormalAttackEvent?.Invoke();
+            }
+        }
+    }
+
+    public void OnSkill()
+    {
+        if (!bIsHit)
+        {
+            OnSkillEvent?.Invoke();
         }
     }
 
@@ -92,6 +128,7 @@ public class PCInputManager : MonoBehaviour
         {
             bIsLockOn = true;
         }
+        OnLockOnEvent?.Invoke();
     }
 
     public void OnInteraction(InputValue inputValue)
@@ -106,13 +143,5 @@ public class PCInputManager : MonoBehaviour
     public void OnInventory()
     {
         OnInventoryEvent?.Invoke();
-        /*if (bIsInventory)
-        {
-            bIsInventory = false;
-        }
-        else
-        {
-            bIsInventory = true;
-        }*/
     }
 }
