@@ -22,8 +22,6 @@ public class PlayerCharacter : MonoBehaviour
     public float AttackRate { get; private set; }
     public float ArmorRate { get; private set; }
     public float AimRate { get; private set; }
-
-    public bool bIsDead { get; set; } = false;
     
     public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
     public event OnHealthChangedDelegate OnHealthChanged;
@@ -36,14 +34,13 @@ public class PlayerCharacter : MonoBehaviour
         playerInventory = GetComponent<PlayerInventory>();
 
         InitPlayerCharacter();
+        characterMovement.InitEssentialData();
     }
 
     void Start()
     {
         inputManager.OnInteractionEvent += Interaction;
         inputManager.OnInventoryEvent += ShowInventory;
-        inputManager.OnLockOnEvent += ActiveLockOn;
-        inputManager.OnSkillEvent += UseSkill;
     }
 
     void Update()
@@ -133,8 +130,8 @@ public class PlayerCharacter : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        currentHealth = Mathf.Clamp(currentHealth - damage, 0.0f, maxHealth);
         inputManager.bIsHit = true;
+        currentHealth = Mathf.Clamp(currentHealth - damage, 0.0f, maxHealth);
 
         if (reactCoroutine == null)
         {
@@ -148,5 +145,6 @@ public class PlayerCharacter : MonoBehaviour
     {
         yield return new WaitForSeconds(0.55f);
         inputManager.bIsHit = false;
+        reactCoroutine = null;
     }
 }

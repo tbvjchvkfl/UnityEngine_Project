@@ -4,9 +4,7 @@ public class CharacterMovement : MonoBehaviour
 {
     [Header("Locomotion")]
     public float maxMoveSpeed = 1.0f;
-
     public float maxJumpPower = 2.0f;
-    public float gravity = -9.81f;
 
     [Header("Object Component")]
     public GameObject CameraObj;
@@ -22,20 +20,14 @@ public class CharacterMovement : MonoBehaviour
     public float moveSpeed { get; private set; }
     public float jumpSpeed { get; private set; }
     public float characterRotationRate {  get; private set; }
+    public float GravityAcceleration { get; private set; } = 0.0f;
+
+    public bool bIsEquipStrafe { get; set; } = false;
 
     public Vector3 currentMoveDirection { get; private set; }
     public Vector3 lastInputDirection {  get; private set; }
 
-    void Awake()
-    {
-        InitEssentialData();
-    }
-
-    void Update()
-    {
-    }
-
-    void InitEssentialData()
+    public void InitEssentialData()
     {
         mainCamera = CameraObj.GetComponent<Camera>();
         inputManager = GetComponent<PCInputManager>();
@@ -62,7 +54,7 @@ public class CharacterMovement : MonoBehaviour
         }
         else
         {
-            currentMoveDirection = lastInputDirection;
+            currentMoveDirection = Vector3.zero;
         }
 
         SetRotateDirection(currentMoveDirection);
@@ -71,41 +63,36 @@ public class CharacterMovement : MonoBehaviour
     void SetRotateDirection(Vector3 moveDirection)
     {
         Quaternion toRotation = Quaternion.identity;
-        if (!inputManager.bIsAim)
+
+        if (bIsEquipStrafe || inputManager.bIsAim)
         {
-            if (moveDirection.magnitude > 0.1f)
-            {
-                toRotation = Quaternion.LookRotation(moveDirection);
-            }
+            toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+        }
+        else if(moveDirection.magnitude > 0.1f)
+        {
+            toRotation = Quaternion.LookRotation(moveDirection);
         }
         else
         {
-            toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
-            toRotation.x = 0.0f;
-            toRotation.z = 0.0f;
+            return;
         }
+        toRotation.x = 0.0f;
+        toRotation.z = 0.0f;
+
         transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
     }
 
-    void SetJumpSpeed()
+    float SetGravity()
     {
-        if (characterController.isGrounded && inputManager.bIsJump)
+        if (!characterController.isGrounded)
         {
-            if (jumpSpeed < 0.0f)
-            {
-                jumpSpeed = -2.0f;
-            }
-            if (inputManager.bIsJump)
-            {
-                jumpSpeed = Mathf.Sqrt(maxJumpPower * -2.0f * gravity);
-            }
-            //bIsJump = true;
+            GravityAcceleration += -9.81f * Time.deltaTime;
         }
         else
         {
-            jumpSpeed += gravity * Time.deltaTime;
-            //bIsJump = false;
+            GravityAcceleration = -2.0f;
         }
+        return GravityAcceleration;
     }
 
     public void SetRotationRate(float newrotationRate)
@@ -121,10 +108,9 @@ public class CharacterMovement : MonoBehaviour
     public void Move()
     {
         SetMoveDirection();
-        SetJumpSpeed();
-        
+
         Vector3 DesiredDirection = currentMoveDirection * moveSpeed * maxMoveSpeed;
-        DesiredDirection.y = jumpSpeed;
+        DesiredDirection.y = SetGravity();
 
         characterController.Move(DesiredDirection * Time.fixedDeltaTime);
     }
