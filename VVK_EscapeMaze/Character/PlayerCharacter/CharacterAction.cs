@@ -2,89 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CharacterAction : MonoBehaviour
+public class BulletPool
 {
-    [Header("Weapon Component")]
-    public GameObject PistolGun;
-    public GameObject PistolMuzzle;
-    public float PistolBulletSpeed = 10.0f;
-    public AnimationClip PistolFire_Anim;
+    // Pool Size
+    public int BulletPoolSize { get; private set; } = 100;
 
-    public GameObject ShotGun;
-    public GameObject ShotGunMuzzle;
-    public float ShotGunBulletSpeed = 10.0f;
-
-    public GameObject RifleGun;
-    public GameObject RifleMuzzle;
-    public float RifleBulletSpeed = 10.0f;
-
-    [Header("Bullet Component")]
-    public GameObject PistolBullet;
-
-    [Header("Component")]
-    public GameObject TargetAim;
-    public float BulletPoolSize = 100.0f;
-
-    // Component
-    PCInputManager inputManager;
-    CharacterAnimation characterAnimation;
-
-    // EssentialData
+    // Pool List
     List<GameObject> bulletPool;
 
-
-    // WeaponCooldown
-    bool bIsPistolFire;
-
-    public bool bIsPistol {  get; private set; }
-    public bool bIsShotGun {  get; private set; }
-    public bool bIsRifle {  get; private set; }
-    
-
-    void Awake()
-    {
-        inputManager = GetComponent<PCInputManager>();
-        characterAnimation = GetComponentInChildren<CharacterAnimation>();
-    }
-
-    void Start()
-    {
-        InitBulletPool();
-        inputManager.OnNormalAttackEvent += ShootPistol;
-    }
-
-    void Update()
-    {
-        AppearPistolMesh();
-    }
-
-    void AppearPistolMesh()
-    {
-        if (inputManager.bIsAim)
-        {
-            PistolGun.SetActive(true);
-        }
-        else if(characterAnimation.AimStateIndex >= 0.0f)
-        {
-            PistolGun.SetActive(false);
-        }
-    }
-
-    void InitBulletPool()
+    public void InitBulletPool(GameObject spawnBullet)
     {
         bulletPool = new List<GameObject>();
-        if (PistolBullet)
+
+        if (spawnBullet)
         {
             for (int i = 0; i < BulletPoolSize; i++)
             {
-                GameObject bullet = GameObject.Instantiate(PistolBullet);
+                GameObject bullet = GameObject.Instantiate(spawnBullet);
                 bullet.SetActive(false);
                 bulletPool.Add(bullet);
             }
         }
     }
 
-    GameObject UseBulletPool()
+    public GameObject UseBulletPool()
     {
         if (bulletPool.Count > 0)
         {
@@ -103,17 +44,88 @@ public class CharacterAction : MonoBehaviour
             bulletPool.Add(returnObject);
         }
     }
+}
 
-    void ShootPistol()
+public class CharacterAction : MonoBehaviour
+{
+    [Header("Weapon Component")]
+    public GameObject PistolGun;
+    public GameObject PistolMuzzle;
+    public float PistolBulletSpeed = 10.0f;
+
+    [Header("Animation Component")]
+    public AnimationClip AimFire_Anim;
+    public AnimationClip PistolAction_Anim_0;
+    public AnimationClip Dodge_Anim;
+    public AnimationClip Step_Anim;
+
+
+    [Header("VFX Component")]
+    public GameObject MuzzleFlash;
+
+    [Header("Bullet Component")]
+    public GameObject PistolBullet;
+
+    [Header("Component")]
+    public GameObject TargetAim;
+
+    // BulletPool Component
+    public BulletPool bulletPool { get; private set; }
+
+    // Component
+    PCInputManager inputManager;
+    CharacterAnimation characterAnimation;
+    
+    // WeaponCooldown
+    bool bIsAimFireCoolDown;
+
+    // Data
+    bool bIsDatasReady = false;
+
+    public void InitEssentialData()
+    {
+        inputManager = GetComponent<PCInputManager>();
+        characterAnimation = GetComponentInChildren<CharacterAnimation>();
+
+        bulletPool = new BulletPool();
+        bulletPool.InitBulletPool(PistolBullet);
+
+        inputManager.OnNormalAttackEvent += ShootPistol;
+        inputManager.OnDodgeEvent += Dodge;
+
+        bIsDatasReady = true;
+    }
+
+    void Update()
+    {
+        if (bIsDatasReady)
+        {
+            AttachPistolMesh();
+        }
+    }
+
+    void AttachPistolMesh()
+    {
+        if (inputManager.bIsAim)
+        {
+            PistolGun.SetActive(true);
+        }
+        else if(characterAnimation.AimStateIndex >= 0.0f)
+        {
+            PistolGun.SetActive(false);
+        }
+    }
+
+   void ShootPistol()
     {
         if (inputManager.bIsAim && inputManager.bIsNormalAttack)
         {
-            if(!bIsPistolFire)
+            if(!bIsAimFireCoolDown)
             {
-                GameObject bullet = UseBulletPool();
+                GameObject bullet = bulletPool.UseBulletPool();
                 if (bullet)
                 {
-                    bIsPistolFire = true;
+                    bIsAimFireCoolDown = true;
                     Vector3 bulletDirection = (TargetAim.transform.position - PistolMuzzle.transform.position).normalized;
                     Bullet bulletComponent = bullet.GetComponent<Bullet>();
                     bulletComponent.InitBullet(this.gameObject);
@@ -121,21 +133,43 @@ public class CharacterAction : MonoBehaviour
                     bullet.transform.position = PistolMuzzle.transform.position;
                     bulletComponent.Fire(bulletDirection, PistolBulletSpeed);
                     StartCoroutine(PistolShootInterval());
-                    Debug.Log("Shoot");
-                }
-                else
-                {
-                    Debug.Log("Empty Bullet");
                 }
                 Debug.DrawRay(PistolMuzzle.transform.position, (TargetAim.transform.position - PistolMuzzle.transform.position).normalized * 20.0f, Color.red, 10.0f);
             }
+        }
+        else if(inputManager.bIsNormalAttack)
+        {
+            Debug.Log("Standing Action");
         }
     }
 
     IEnumerator PistolShootInterval()
     {
-        yield return new WaitForSeconds(PistolFire_Anim.length);
-        bIsPistolFire = false;
+        yield return new WaitForSeconds(AimFire_Anim.length);
+        bIsAimFireCoolDown = false;
+    }
+
+    public void ShowMuzzleFlashInAnim()
+    {
+
+    }
+
+    void Dodge()
+    {
+
+        StartCoroutine(DodgetoStanding());
+    }
+
+    IEnumerator DodgetoStanding()
+    {
+        if (inputManager.bIsAim)
+        {
+            yield return new WaitForSeconds(Step_Anim.length);
+        }
+        else
+        {
+            yield return new WaitForSeconds(Dodge_Anim.length);
+        }
     }
 
     private void OnDestroy()

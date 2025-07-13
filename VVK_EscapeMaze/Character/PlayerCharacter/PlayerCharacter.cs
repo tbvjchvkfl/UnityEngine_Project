@@ -35,6 +35,8 @@ public class PlayerCharacter : MonoBehaviour
 
         InitPlayerCharacter();
         characterMovement.InitEssentialData();
+        characterAction.InitEssentialData();
+        playerInventory.InitializeInventory();
     }
 
     void Start()

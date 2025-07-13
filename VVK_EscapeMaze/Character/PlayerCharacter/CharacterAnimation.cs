@@ -10,7 +10,6 @@ public class CharacterAnimation : MonoBehaviour
 
     PCInputManager inputManager;
     CharacterMovement characterMovement;
-    CharacterAction characterAction;
     Animator animationController;
 
     public float leaningAngle {  get; private set; }
@@ -31,7 +30,6 @@ public class CharacterAnimation : MonoBehaviour
     {
         inputManager = GetComponentInParent<PCInputManager>();
         characterMovement = GetComponentInParent<CharacterMovement>();
-        characterAction = GetComponentInParent<CharacterAction>();
         animationController = GetComponent<Animator>();
 
         leaningAngle = 0.0f;
@@ -41,12 +39,10 @@ public class CharacterAnimation : MonoBehaviour
 
     void SetMovementData()
     {
-        animationController.SetBool("InAir", inputManager.bIsJump);
+        animationController.SetBool("Dodge", inputManager.bIsDodge);
         animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
-        animationController.SetBool("Crouch", inputManager.bIsCrouch);
         animationController.SetBool("Aim", inputManager.bIsAim);
         animationController.SetBool("Attack", inputManager.bIsNormalAttack);
-        animationController.SetBool("Lock On", inputManager.bIsLockOn);
         animationController.SetBool("Hit", inputManager.bIsHit);
 
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
@@ -58,15 +54,10 @@ public class CharacterAnimation : MonoBehaviour
 
     float SetMoveStateIndex()
     {
-        float CrouchTarget = 0.0f;
-        float WalkTarget = 1.0f;
-        float RunTarget = 2.0f;
-        float SprintTarget = 3.0f;
-
-        MoveStateIndex = inputManager.bIsCrouch ? Mathf.MoveTowards(MoveStateIndex, CrouchTarget, Time.deltaTime * 2.5f) :
-                                 inputManager.bIsWalk ? Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime) :
-                                 inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, SprintTarget, Time.deltaTime) :
-                                                                Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime);
+        float WalkTarget = 0.0f;
+        float RunTarget = 1.0f;
+        
+        MoveStateIndex = inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime * 2.5f) : Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime * 2.5f);
         return MoveStateIndex;
     }
 
