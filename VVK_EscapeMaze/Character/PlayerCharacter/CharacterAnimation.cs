@@ -33,7 +33,7 @@ public class CharacterAnimation : MonoBehaviour
         animationController = GetComponent<Animator>();
 
         leaningAngle = 0.0f;
-        MoveStateIndex = 2.0f;
+        MoveStateIndex = 0.0f;
         AimStateIndex = 0.0f;
     }
 
@@ -49,7 +49,32 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
 
         characterMovement.SetRotationRate(animationController.GetFloat("Rotation Value For Script"));
-        characterMovement.SetMoveSpeed(animationController.GetFloat("MoveSpeed For Script"));
+        characterMovement.SetMoveSpeed(SetMoveSpeedValue());
+    }
+
+    float SetMoveSpeedValue()
+    {
+        float SpeedValue = 0.0f;
+        if (inputManager.bIsEquip)
+        {
+            if (inputManager.inputDirection.magnitude > 0.1f)
+            {
+                if (MoveStateIndex == 0)
+                {
+                    SpeedValue = 2.0f;
+                }
+                else if (MoveStateIndex == 1)
+                {
+                    SpeedValue = 5.0f;
+                }
+            }
+            animationController.SetFloat("Move Strafe Speed", Mathf.MoveTowards());
+        }
+        else
+        {
+            SpeedValue = animationController.GetFloat("MoveSpeed For Script");
+        }
+        return SpeedValue;
     }
 
     float SetMoveStateIndex()
