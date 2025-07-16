@@ -15,6 +15,7 @@ public class CharacterAnimation : MonoBehaviour
     public float leaningAngle {  get; private set; }
     public float MoveStateIndex {  get; private set; }
     public float AimStateIndex {  get; private set; }
+    public float SpeedValue { get; private set; }
 
     void Awake()
     {
@@ -39,11 +40,13 @@ public class CharacterAnimation : MonoBehaviour
 
     void SetMovementData()
     {
+        animationController.SetBool("Step", inputManager.bIsStep);
         animationController.SetBool("Dodge", inputManager.bIsDodge);
         animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
         animationController.SetBool("Aim", inputManager.bIsAim);
         animationController.SetBool("Attack", inputManager.bIsNormalAttack);
         animationController.SetBool("Hit", inputManager.bIsHit);
+        animationController.SetBool("Equip", inputManager.bIsEquip);
 
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
@@ -54,26 +57,29 @@ public class CharacterAnimation : MonoBehaviour
 
     float SetMoveSpeedValue()
     {
-        float SpeedValue = 0.0f;
         if (inputManager.bIsEquip)
         {
-            if (inputManager.inputDirection.magnitude > 0.1f)
+            if(inputManager.inputDirection.magnitude > 0.1f)
             {
-                if (MoveStateIndex == 0)
+                if (MoveStateIndex < 1.0f)
                 {
                     SpeedValue = 2.0f;
                 }
-                else if (MoveStateIndex == 1)
+                else
                 {
                     SpeedValue = 5.0f;
                 }
             }
-            animationController.SetFloat("Move Strafe Speed", Mathf.MoveTowards());
+            else
+            {
+                SpeedValue = 0.0f;
+            }
         }
         else
         {
             SpeedValue = animationController.GetFloat("MoveSpeed For Script");
         }
+
         return SpeedValue;
     }
 
@@ -152,5 +158,31 @@ public class CharacterAnimation : MonoBehaviour
 
         leaningAngle = Mathf.MoveTowards(leaningAngle, targetLean, Time.deltaTime);
         return leaningAngle;
+    }
+
+    public void SetDodgeDirection()
+    {
+        float dodgeAngle = CalculateDirection();
+
+        if (dodgeAngle >= -45.0f && dodgeAngle <= 45.0f)
+        {
+            animationController.SetFloat("DodgeAngle", 0.0f);
+        }
+        else if (dodgeAngle < -45.0f && dodgeAngle >= -135.0f)
+        {
+            animationController.SetFloat("DodgeAngle", -90.0f);
+        }
+        else if (dodgeAngle < -135.0f && dodgeAngle >= -180.0f)
+        {
+            animationController.SetFloat("DodgeAngle", -180.0f);
+        }
+        else if (dodgeAngle > 45.0f && dodgeAngle <= 135.0f)
+        {
+            animationController.SetFloat("DodgeAngle", 90.0f);
+        }
+        else if(dodgeAngle > 135.0f && dodgeAngle <= 180.0f)
+        {
+            animationController.SetFloat("DodgeAngle", 180.0f);
+        }
     }
 }

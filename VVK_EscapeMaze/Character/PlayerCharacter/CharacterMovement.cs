@@ -18,11 +18,8 @@ public class CharacterMovement : MonoBehaviour
 
     // Move State Value
     public float moveSpeed { get; private set; }
-    public float jumpSpeed { get; private set; }
     public float characterRotationRate {  get; private set; }
     public float GravityAcceleration { get; private set; } = 0.0f;
-
-    public bool bIsEquipStrafe { get; set; } = false;
 
     public Vector3 currentMoveDirection { get; private set; }
     public Vector3 lastInputDirection {  get; private set; }
@@ -64,7 +61,7 @@ public class CharacterMovement : MonoBehaviour
     {
         Quaternion toRotation = Quaternion.identity;
 
-        if (bIsEquipStrafe || inputManager.bIsAim)
+        if (inputManager.bIsEquip || inputManager.bIsAim)
         {
             toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
         }
@@ -103,6 +100,16 @@ public class CharacterMovement : MonoBehaviour
     public void SetMoveSpeed(float newmoveSpeed)
     {
         moveSpeed = newmoveSpeed;
+    }
+
+    public void StepAndDodgeMovement(Vector3 DesiredDirection, float MovePower)
+    {
+        float prevMoveSpeed = 0.0f;
+        prevMoveSpeed = moveSpeed;
+        moveSpeed = 0.0f;
+        characterController.Move(DesiredDirection * MovePower);
+
+        moveSpeed = prevMoveSpeed;
     }
 
     public void Move()

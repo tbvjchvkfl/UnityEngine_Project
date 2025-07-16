@@ -56,8 +56,6 @@ public class CharacterAction : MonoBehaviour
     [Header("Animation Component")]
     public AnimationClip AimFire_Anim;
     public AnimationClip PistolAction_Anim_0;
-    public AnimationClip Dodge_Anim;
-    public AnimationClip Step_Anim;
 
 
     [Header("VFX Component")]
@@ -75,17 +73,21 @@ public class CharacterAction : MonoBehaviour
     // Component
     PCInputManager inputManager;
     CharacterAnimation characterAnimation;
-    
+    CharacterMovement characterMovement;
+
+    Coroutine DodgeCoroutine;
+
     // WeaponCooldown
     bool bIsAimFireCoolDown;
 
     // Data
-    bool bIsDatasReady = false;
+    bool bIsDataReady = false;
 
     public void InitEssentialData()
     {
         inputManager = GetComponent<PCInputManager>();
         characterAnimation = GetComponentInChildren<CharacterAnimation>();
+        characterMovement = GetComponent<CharacterMovement>();
 
         bulletPool = new BulletPool();
         bulletPool.InitBulletPool(PistolBullet);
@@ -93,12 +95,12 @@ public class CharacterAction : MonoBehaviour
         inputManager.OnNormalAttackEvent += ShootPistol;
         inputManager.OnDodgeEvent += Dodge;
 
-        bIsDatasReady = true;
+        bIsDataReady = true;
     }
 
     void Update()
     {
-        if (bIsDatasReady)
+        if (bIsDataReady)
         {
             AttachPistolMesh();
         }
@@ -156,24 +158,33 @@ public class CharacterAction : MonoBehaviour
 
     void Dodge()
     {
-
-        StartCoroutine(DodgetoStanding());
+        if (DodgeCoroutine == null)
+        {
+            characterAnimation.SetDodgeDirection();
+            DodgeCoroutine = StartCoroutine(DodgetoStanding());
+        }
     }
 
     IEnumerator DodgetoStanding()
     {
-        if (inputManager.bIsAim)
+        characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 0.5f);
+        yield return new WaitForSeconds(0.3f);
+
+        if (inputManager.bIsDodge)
         {
-            yield return new WaitForSeconds(Step_Anim.length);
+            characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 3.0f);
+            yield return new WaitForSeconds(0.5f);
         }
-        else
-        {
-            yield return new WaitForSeconds(Dodge_Anim.length);
-        }
+
+        inputManager.bIsStep = false;
+        inputManager.bIsDodge = false;
+        StopCoroutine(DodgeCoroutine);
+        DodgeCoroutine = null;
     }
 
     private void OnDestroy()
     {
         inputManager.OnNormalAttackEvent -= ShootPistol;
+        inputManager.OnDodgeEvent -= Dodge;
     }
 }
