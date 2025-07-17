@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,15 +14,13 @@ public class SkillTree : MonoBehaviour
     public Text TechnicalPointText;
     public Text SkillNameText;
     public Text SkillDescriptionText;
-    public GameObject ActionSkillSlot;
-    public GameObject SpedcialSkillSlot;
 
     public GameObject[] SkillNodeList = new GameObject[21];
+    public GameObject[] SkillSlotList = new GameObject[2];
 
     PlayerCharacter playerCharacter;
-
-    SkillSlot actionSkill;
-    SkillSlot specialSkill;
+    SkillSlot leftClickSkill;
+    SkillSlot rightClickSkill;
 
     void Update()
     {
@@ -45,14 +42,11 @@ public class SkillTree : MonoBehaviour
             playerCharacter = owner.GetComponent<PlayerCharacter>();
             TechnicalPointText.text = $"TP : {playerCharacter.technicalPoint}";
 
-            if(ActionSkillSlot && SpedcialSkillSlot)
-            {
-                actionSkill = ActionSkillSlot.GetComponent<SkillSlot>();
-                actionSkill.InitializeSkillSlot(owner);
+            leftClickSkill = SkillSlotList[0].GetComponent<SkillSlot>();
+            leftClickSkill.InitializeSkillSlot(owner, 0);
 
-                specialSkill = SpedcialSkillSlot.GetComponent<SkillSlot>();
-                specialSkill.InitializeSkillSlot(owner);
-            }
+            rightClickSkill = SkillSlotList[1].GetComponent<SkillSlot>();
+            rightClickSkill.InitializeSkillSlot(owner, 1);
 
             foreach (GameObject skillNode in SkillNodeList)
             {

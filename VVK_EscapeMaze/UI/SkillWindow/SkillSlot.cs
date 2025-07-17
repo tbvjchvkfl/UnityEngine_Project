@@ -6,14 +6,17 @@ public class SkillSlot : MonoBehaviour, IDropHandler
 {
     public Image EquipSkillIcon;
 
-    PlayerCharacter playerCharacter;
+    PlayerInventory playerInventory;
     SkillNode skillNode;
 
-    public void InitializeSkillSlot(GameObject owner)
+    int SlotNum;
+
+    public void InitializeSkillSlot(GameObject owner, int Num)
     {
         if (owner)
         {
-            playerCharacter = owner.GetComponent<PlayerCharacter>();
+            SlotNum = Num;
+            playerInventory = owner.GetComponent<PlayerInventory>();
             EquipSkillIcon.color = Color.clear;
         }
     }
@@ -29,12 +32,8 @@ public class SkillSlot : MonoBehaviour, IDropHandler
             {
                 EquipSkillIcon.sprite = skillNode.SkillIcon.sprite;
                 EquipSkillIcon.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+                playerInventory.EquipSkill(skillNode, SlotNum);
             }
         }
-    }
-
-    public void EquipSkill()
-    {
-
     }
 }
