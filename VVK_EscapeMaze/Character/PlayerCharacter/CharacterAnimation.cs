@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
@@ -10,7 +11,9 @@ public class CharacterAnimation : MonoBehaviour
 
     PCInputManager inputManager;
     CharacterMovement characterMovement;
+    CharacterAction characterAction;
     Animator animationController;
+    Coroutine SkillCoroutine;
 
     public float leaningAngle {  get; private set; }
     public float MoveStateIndex {  get; private set; }
@@ -31,6 +34,7 @@ public class CharacterAnimation : MonoBehaviour
     {
         inputManager = GetComponentInParent<PCInputManager>();
         characterMovement = GetComponentInParent<CharacterMovement>();
+        characterAction = GetComponentInParent<CharacterAction>();
         animationController = GetComponent<Animator>();
 
         leaningAngle = 0.0f;
@@ -47,6 +51,9 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetBool("Attack", inputManager.bIsNormalAttack);
         animationController.SetBool("Hit", inputManager.bIsHit);
         animationController.SetBool("Equip", inputManager.bIsEquip);
+        animationController.SetBool("Skill Ready", inputManager.bIsSkillReady);
+        animationController.SetBool("Skill Activate", characterAction.bIsSkillActivate);
+        animationController.SetFloat("Skill Index", characterAction.SkillIndex);
 
         animationController.SetFloat("Move State Index", SetMoveStateIndex());
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
@@ -184,5 +191,32 @@ public class CharacterAnimation : MonoBehaviour
         {
             animationController.SetFloat("DodgeAngle", 180.0f);
         }
+    }
+
+    // Animation Notify ver.
+    public void SkillBegin()
+    {
+        if (SkillCoroutine == null)
+        {
+            SkillCoroutine = StartCoroutine(SkillActivate());
+        }
+    }
+
+    IEnumerator SkillActivate()
+    {
+        while (characterAction.bIsSkillActivate)
+        {
+            yield return null;
+        }
+    }
+
+    public void SkillEnd()
+    {
+        if (SkillCoroutine != null)
+        {
+            StopCoroutine(SkillCoroutine);
+            SkillCoroutine = null;
+        }
+        characterAction.bIsSkillActivate = false;
     }
 }

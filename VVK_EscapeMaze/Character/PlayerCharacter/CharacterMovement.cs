@@ -14,7 +14,7 @@ public class CharacterMovement : MonoBehaviour
     Camera mainCamera;
     PCInputManager inputManager;
     CharacterController characterController;
-    
+    CharacterAction characterAction;
 
     // Move State Value
     public float moveSpeed { get; private set; }
@@ -29,54 +29,61 @@ public class CharacterMovement : MonoBehaviour
         mainCamera = CameraObj.GetComponent<Camera>();
         inputManager = GetComponent<PCInputManager>();
         characterController = GetComponent<CharacterController>();
+        characterAction = GetComponentInChildren<CharacterAction>();
         lastInputDirection = transform.forward;
     }
 
     void SetMoveDirection()
     {
-        Vector3 CameraForwardVector = mainCamera.transform.forward;
-        CameraForwardVector.y = 0.0f;
-        CameraForwardVector.Normalize();
-
-        Vector3 CameraRightVector = mainCamera.transform.right;
-        CameraRightVector.y = 0.0f;
-        CameraRightVector.Normalize();
-
-        Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
-
-        if(desiredMoveDirection.magnitude > 0.1f)
+        if (!inputManager.bIsInventory)
         {
-            lastInputDirection = desiredMoveDirection;
-            currentMoveDirection = desiredMoveDirection;
-        }
-        else
-        {
-            currentMoveDirection = Vector3.zero;
-        }
+            Vector3 CameraForwardVector = mainCamera.transform.forward;
+            CameraForwardVector.y = 0.0f;
+            CameraForwardVector.Normalize();
 
-        SetRotateDirection(currentMoveDirection);
+            Vector3 CameraRightVector = mainCamera.transform.right;
+            CameraRightVector.y = 0.0f;
+            CameraRightVector.Normalize();
+
+            Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
+
+            if (desiredMoveDirection.magnitude > 0.1f)
+            {
+                lastInputDirection = desiredMoveDirection;
+                currentMoveDirection = desiredMoveDirection;
+            }
+            else
+            {
+                currentMoveDirection = Vector3.zero;
+            }
+
+            SetRotateDirection(currentMoveDirection);
+        }
     }
 
     void SetRotateDirection(Vector3 moveDirection)
     {
-        Quaternion toRotation = Quaternion.identity;
+        if (!inputManager.bIsInventory)
+        {
+            Quaternion toRotation = Quaternion.identity;
 
-        if (inputManager.bIsEquip || inputManager.bIsAim)
-        {
-            toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
-        }
-        else if(moveDirection.magnitude > 0.1f)
-        {
-            toRotation = Quaternion.LookRotation(moveDirection);
-        }
-        else
-        {
-            return;
-        }
-        toRotation.x = 0.0f;
-        toRotation.z = 0.0f;
+            if (inputManager.bIsEquip || inputManager.bIsAim)
+            {
+                toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+            }
+            else if (moveDirection.magnitude > 0.1f)
+            {
+                toRotation = Quaternion.LookRotation(moveDirection);
+            }
+            else
+            {
+                return;
+            }
+            toRotation.x = 0.0f;
+            toRotation.z = 0.0f;
 
-        transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
+            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, Time.fixedDeltaTime * characterRotationRate);
+        }
     }
 
     float SetGravity()
@@ -104,21 +111,27 @@ public class CharacterMovement : MonoBehaviour
 
     public void StepAndDodgeMovement(Vector3 DesiredDirection, float MovePower)
     {
-        float prevMoveSpeed = 0.0f;
-        prevMoveSpeed = moveSpeed;
-        moveSpeed = 0.0f;
-        characterController.Move(DesiredDirection * MovePower);
+        if(!characterAction.bIsSkillActivate)
+        {
+            float prevMoveSpeed = 0.0f;
+            prevMoveSpeed = moveSpeed;
+            moveSpeed = 0.0f;
+            characterController.Move(DesiredDirection * MovePower);
 
-        moveSpeed = prevMoveSpeed;
+            moveSpeed = prevMoveSpeed;
+        }
     }
 
     public void Move()
     {
-        SetMoveDirection();
+        if (!characterAction.bIsSkillActivate && !inputManager.bIsStep && !inputManager.bIsDodge)
+        {
+            SetMoveDirection();
 
-        Vector3 DesiredDirection = currentMoveDirection * moveSpeed * maxMoveSpeed;
-        DesiredDirection.y = SetGravity();
+            Vector3 DesiredDirection = currentMoveDirection * moveSpeed * maxMoveSpeed;
+            DesiredDirection.y = SetGravity();
 
-        characterController.Move(DesiredDirection * Time.fixedDeltaTime);
+            characterController.Move(DesiredDirection * Time.fixedDeltaTime);
+        }
     }
 }

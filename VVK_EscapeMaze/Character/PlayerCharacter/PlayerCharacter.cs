@@ -17,7 +17,7 @@ public class PlayerCharacter : MonoBehaviour
     public float currentHealth { get; private set; }
     public int maxSkillPoint { get; private set; } = 13;
     public int currentSkillPoint { get; private set; } = 0;
-    public int technicalPoint { get; private set; } = 10;
+    public int technicalPoint { get; private set; } = 0;
 
     public float AttackRate { get; private set; }
     public float ArmorRate { get; private set; }
@@ -29,14 +29,15 @@ public class PlayerCharacter : MonoBehaviour
     void Awake()
     {
         characterMovement = GetComponent<CharacterMovement>();
-        characterAction = GetComponent<CharacterAction>();
         inputManager = GetComponent<PCInputManager>();
         playerInventory = GetComponent<PlayerInventory>();
+        characterAction = GetComponentInChildren<CharacterAction>();
 
         InitPlayerCharacter();
         characterMovement.InitEssentialData();
         characterAction.InitEssentialData();
         playerInventory.InitializeInventory();
+        playerInventory.InitializeSkillInventory();
     }
 
     void Start()
@@ -49,6 +50,14 @@ public class PlayerCharacter : MonoBehaviour
     {
         Debug.DrawRay(transform.position, transform.forward * 2, Color.red); // 현재 전방
         Debug.DrawRay(transform.position, characterMovement.currentMoveDirection * 2, Color.blue); // 이동 방향
+
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            if (PlayerHUD.Inventory.activeSelf || PlayerHUD.SkillTree.activeSelf || PlayerHUD.SettingUI.activeSelf)
+            {
+                PlayerHUD.LeftChangedUIMenu();
+            }
+        }
     }
 
     void FixedUpdate()
@@ -67,7 +76,7 @@ public class PlayerCharacter : MonoBehaviour
         if (!PlayerHUD.Inventory.activeSelf && !PlayerHUD.SkillTree.activeSelf && !PlayerHUD.SettingUI.activeSelf)
         {
             Ray ray = new Ray(transform.position, CameraComponent.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hit, 1.0f, ~0, QueryTriggerInteraction.Collide))
+            if (Physics.Raycast(ray, out RaycastHit hit, 5.0f, ~0, QueryTriggerInteraction.Collide))
             {
                 if (hit.collider.CompareTag("Item"))
                 {
@@ -91,23 +100,6 @@ public class PlayerCharacter : MonoBehaviour
         {
             PlayerHUD.ToggleInventory();
         }
-    }
-
-    void ActiveLockOn()
-    {
-        if (!PlayerHUD.Inventory.activeSelf && !PlayerHUD.SkillTree.activeSelf && !PlayerHUD.SettingUI.activeSelf)
-        {
-
-        }
-        else
-        {
-            PlayerHUD.LeftChangedUIMenu();
-        }
-    }
-
-    void UseSkill()
-    {
-        
     }
 
     public void SetSkillPoint(int value)
@@ -145,8 +137,10 @@ public class PlayerCharacter : MonoBehaviour
 
     IEnumerator OnReact()
     {
-        yield return new WaitForSeconds(0.55f);
+        yield return new WaitForSeconds(0.15f);
         inputManager.bIsHit = false;
         reactCoroutine = null;
     }
+
+    
 }

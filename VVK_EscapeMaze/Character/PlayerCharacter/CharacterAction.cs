@@ -53,16 +53,20 @@ public class CharacterAction : MonoBehaviour
     public GameObject PistolMuzzle;
     public float PistolBulletSpeed = 10.0f;
 
-    [Header("Animation Component")]
-    public AnimationClip AimFire_Anim;
-    public AnimationClip PistolAction_Anim_0;
+    public GameObject ShotGun;
+    public GameObject ShotGunMuzzle;
+    public float ShotGunBulletSpeed = 10.0f;
 
+    public GameObject RifleGun;
+    public GameObject RifleMuzzle;
+    public float RifleGunBulletSpeed = 10.0f;
 
     [Header("VFX Component")]
     public GameObject MuzzleFlash;
 
     [Header("Bullet Component")]
     public GameObject PistolBullet;
+    public GameObject ShotGunBullet;
 
     [Header("Component")]
     public GameObject TargetAim;
@@ -74,25 +78,41 @@ public class CharacterAction : MonoBehaviour
     PCInputManager inputManager;
     CharacterAnimation characterAnimation;
     CharacterMovement characterMovement;
+    PlayerInventory playerInventory;
 
     Coroutine DodgeCoroutine;
+    
+
+    // Skill Data
+    public SkillNode[] SkillList { get; private set; } = new SkillNode[2];
+    public float SkillIndex { get; set; } = 0.0f;
+    public bool bIsSkillActivate { get; set; } = false;
 
     // WeaponCooldown
     bool bIsAimFireCoolDown;
 
     // Data
     bool bIsDataReady = false;
+    
+
+    // Delegate
+    public delegate void OnEquipSkillSlot_LDelegate(SkillNode nodeData, int Num);
+    public event OnEquipSkillSlot_LDelegate OnEquipSkillSlot;
+
 
     public void InitEssentialData()
     {
-        inputManager = GetComponent<PCInputManager>();
-        characterAnimation = GetComponentInChildren<CharacterAnimation>();
-        characterMovement = GetComponent<CharacterMovement>();
+        inputManager = GetComponentInParent<PCInputManager>();
+        characterMovement = GetComponentInParent<CharacterMovement>();
+        playerInventory = GetComponentInParent<PlayerInventory>();
+        characterAnimation = GetComponent<CharacterAnimation>();
 
         bulletPool = new BulletPool();
         bulletPool.InitBulletPool(PistolBullet);
 
+        playerInventory.OnEquipSkillEvent += EquipSkill;
         inputManager.OnNormalAttackEvent += ShootPistol;
+        inputManager.OnSpecialSkillEvent += SpecialSkill;
         inputManager.OnDodgeEvent += Dodge;
 
         bIsDataReady = true;
@@ -120,40 +140,68 @@ public class CharacterAction : MonoBehaviour
 
    void ShootPistol()
     {
-        if (inputManager.bIsAim && inputManager.bIsNormalAttack)
+        if (!bIsSkillActivate)
         {
-            if(!bIsAimFireCoolDown)
+            if (!inputManager.bIsAim && !inputManager.bIsSkillReady)
             {
-                GameObject bullet = bulletPool.UseBulletPool();
-                if (bullet)
-                {
-                    bIsAimFireCoolDown = true;
-                    Vector3 bulletDirection = (TargetAim.transform.position - PistolMuzzle.transform.position).normalized;
-                    Bullet bulletComponent = bullet.GetComponent<Bullet>();
-                    bulletComponent.InitBullet(this.gameObject);
-                    bullet.SetActive(true);
-                    bullet.transform.position = PistolMuzzle.transform.position;
-                    bulletComponent.Fire(bulletDirection, PistolBulletSpeed);
-                    StartCoroutine(PistolShootInterval());
-                }
-                Debug.DrawRay(PistolMuzzle.transform.position, (TargetAim.transform.position - PistolMuzzle.transform.position).normalized * 20.0f, Color.red, 10.0f);
+                Debug.Log("Standing Action");
             }
-        }
-        else if(inputManager.bIsNormalAttack)
-        {
-            Debug.Log("Standing Action");
+            else if (!inputManager.bIsAim && inputManager.bIsSkillReady && SkillList[0])
+            {
+                Debug.Log("Normal Skill Activated");
+                SkillIndex = SkillList[0].SkillData.SkillIndex;
+                bIsSkillActivate = true;
+            }
         }
     }
 
-    IEnumerator PistolShootInterval()
+    public void BeginShootBulletInAnim()
     {
-        yield return new WaitForSeconds(AimFire_Anim.length);
+        if (inputManager.bIsAim && !bIsAimFireCoolDown)
+        {
+            GameObject bullet = bulletPool.UseBulletPool();
+            if (bullet)
+            {
+                bIsAimFireCoolDown = true;
+                Vector3 bulletDirection = (TargetAim.transform.position - PistolMuzzle.transform.position).normalized;
+                Bullet bulletComponent = bullet.GetComponent<Bullet>();
+                bulletComponent.InitBullet(this.gameObject);
+                bullet.SetActive(true);
+                bullet.transform.position = PistolMuzzle.transform.position;
+                bulletComponent.Fire(bulletDirection, PistolBulletSpeed);
+                ShowMuzzleFlashInAnim();
+            }
+            Debug.DrawRay(PistolMuzzle.transform.position, (TargetAim.transform.position - PistolMuzzle.transform.position).normalized * 20.0f, Color.red, 10.0f);
+        }
+    }
+
+    public void EndShootBulletInAnim()
+    {
         bIsAimFireCoolDown = false;
     }
 
     public void ShowMuzzleFlashInAnim()
     {
 
+    }
+
+    void SpecialSkill()
+    {
+        if(inputManager.bIsSkillReady && SkillList[1] && !bIsSkillActivate)
+        {
+            Debug.Log("Special Skill Activated");
+            SkillIndex = SkillList[1].SkillData.SkillIndex;
+            bIsSkillActivate = true;
+        }
+    }
+
+    void EquipSkill(SkillNode node, int nodeNum)
+    {
+        if (node)
+        {
+            SkillList[nodeNum] = node;
+            OnEquipSkillSlot?.Invoke(node, nodeNum);
+        }
     }
 
     void Dodge()
@@ -172,7 +220,7 @@ public class CharacterAction : MonoBehaviour
 
         if (inputManager.bIsDodge)
         {
-            characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 3.0f);
+            characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 1.0f);
             yield return new WaitForSeconds(0.5f);
         }
 
