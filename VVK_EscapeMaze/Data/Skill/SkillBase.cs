@@ -7,6 +7,7 @@ public class SkillBase : ScriptableObject
     public string SkillDescription = "Skill Description";
 
     public int SkillID = 0;
+    public float SkillIndex = 0.0f;
     public int NeedTechnicalPoint = 1;
 
     public float IncreaseAttackRate = 1.0f;
