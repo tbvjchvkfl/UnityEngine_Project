@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
@@ -8,6 +9,8 @@ public class CharacterAnimation : MonoBehaviour
 
     public GameObject head_Bone;
     public GameObject spine_Bone;
+
+    public BoxCollider SkillRangeBox;
 
     PCInputManager inputManager;
     CharacterMovement characterMovement;
@@ -206,6 +209,19 @@ public class CharacterAnimation : MonoBehaviour
     {
         while (characterAction.bIsSkillActivate)
         {
+            Collider[] HitList = Physics.OverlapBox(SkillRangeBox.bounds.center, SkillRangeBox.bounds.extents / 2, Quaternion.identity, ~0);
+            foreach (Collider hit in HitList)
+            {
+                if (hit.gameObject.CompareTag("Enemy"))
+                {
+                    EnemyStateMachine EnemySM = hit.gameObject.GetComponent<EnemyStateMachine>();
+                    if (EnemySM)
+                    {
+                        EnemySM.OnTakeDamage(2.0f);
+                        Debug.Log("Enemy Damage");
+                    }
+                }
+            }
             yield return null;
         }
     }
