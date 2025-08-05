@@ -20,7 +20,7 @@ public class IdleState : IEnemyState
     {
         DelayTime = 0.0f;
         stateMachine.FindDestination();
-        Debug.Log("Idle");
+        //Debug.Log("Idle");
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
@@ -57,7 +57,7 @@ public class MoveState : IEnemyState
     public void EnterState(EnemyStateMachine stateMachine)
     {
         stateMachine.navAgent.isStopped = false;
-        Debug.Log("Move");
+        //Debug.Log("Move");
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
@@ -145,7 +145,7 @@ public class AttackState : IEnemyState
         stateMachine.bIsAttack = false;
         stateMachine.navAgent.isStopped = true;
         stateMachine.navAgent.velocity = Vector3.zero;
-        Debug.Log("Attack");
+        //Debug.Log("Attack");
     }
 
     public void LoopState(EnemyStateMachine stateMachine)
@@ -285,7 +285,6 @@ public class EnemyStateMachine : MonoBehaviour
         animationController.SetBool("Attack", bIsAttack);
         animationController.SetBool("Hit", bIsHit);
 
-        //animationController.SetFloat("Idle State Index", Random.Range(0, 2));
         animationController.SetFloat("Moving Index", bIsRecognize ? 1 : 0);
     }
 

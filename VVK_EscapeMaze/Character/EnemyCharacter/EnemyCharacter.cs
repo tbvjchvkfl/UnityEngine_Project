@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class EnemyCharacter : MonoBehaviour
 {
-    
     public float CurrentHP { get; private set; }
     public float MaxHP { get; private set; }
     public float AttackDamage { get; private set; }
@@ -11,6 +10,11 @@ public class EnemyCharacter : MonoBehaviour
 
     EnemyStateMachine enemyStateMachine;
     EnemyBase enemyData;
+
+    void Update()
+    {
+        Debug.Log(transform.position);
+    }
 
     public void InitializedEnemyData(EnemyBase EnemyData)
     {
