@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public enum SpawnType
 {
@@ -11,7 +12,12 @@ public class SpawnPoint : MonoBehaviour
 {
     public SpawnType SpawnType;
     public ItemBase ItemData;
+    public EnemyBase EnemyData;
     public GameObject ItemPoolObj;
+    public GameObject EnemyPoolObj;
+    public bool bIsLinkingTrigger = false;
+    public bool bIsDelayEnd { get; set; } = false;
+
 
     void Awake()
     {
@@ -20,7 +26,19 @@ public class SpawnPoint : MonoBehaviour
 
     void Start()
     {
-        if(SpawnType == SpawnType.Item)
+        if (!bIsLinkingTrigger)
+        {
+            ObjectSpawn();
+        }
+        else
+        {
+            StartCoroutine(SpawnDelay());
+        }
+    }
+
+    void ObjectSpawn()
+    {
+        if (SpawnType == SpawnType.Item)
         {
             if (ItemPoolObj)
             {
@@ -29,7 +47,10 @@ public class SpawnPoint : MonoBehaviour
         }
         else if (SpawnType == SpawnType.Character)
         {
-
+            if (EnemyPoolObj)
+            {
+                StartCoroutine(SpawnEnemy(EnemyPoolObj.GetComponent<EnemyPool>()));
+            }
         }
     }
 
@@ -47,9 +68,36 @@ public class SpawnPoint : MonoBehaviour
         }
         else
         {
-            Debug.Log("nullptr");
+            Debug.Log("Item nullptr");
         }
         Destroy(gameObject);
     }
     
+    IEnumerator SpawnEnemy(EnemyPool enemyPool)
+    {
+        while (!enemyPool.bIsPoolReady)
+        {
+            yield return null;
+        }
+        GameObject SpawnEnemy = enemyPool.UseEnemyPool();
+        if (SpawnEnemy)
+        {
+            SpawnEnemy.GetComponent<NavMeshAgent>().Warp(transform.position);
+            SpawnEnemy.GetComponent<EnemyCharacter>().InitializedEnemyData(EnemyData);
+        }
+        else
+        {
+            Debug.Log("Enemy nullptr");
+        }
+        Destroy(gameObject);
+    }
+
+    IEnumerator SpawnDelay()
+    {
+        while (!bIsDelayEnd)
+        {
+            yield return null;
+        }
+        ObjectSpawn();
+    }
 }
