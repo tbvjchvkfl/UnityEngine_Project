@@ -1,23 +1,25 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerCharacter : MonoBehaviour
 {
     public HUD PlayerHUD;
-    public GameObject CameraComponent;
 
     CharacterMovement characterMovement;
     CharacterAction characterAction;
     PCInputManager inputManager;
     PlayerInventory playerInventory;
+    Camera mainCamera;
 
     Coroutine reactCoroutine = null;
+
 
     public float maxHealth { get; private set; } = 100.0f;
     public float currentHealth { get; private set; }
     public int maxSkillPoint { get; private set; } = 13;
     public int currentSkillPoint { get; private set; } = 0;
-    public int technicalPoint { get; private set; } = 0;
+    public int technicalPoint { get; private set; } = 10;
 
     public float AttackRate { get; private set; }
     public float ArmorRate { get; private set; }
@@ -32,6 +34,7 @@ public class PlayerCharacter : MonoBehaviour
         inputManager = GetComponent<PCInputManager>();
         playerInventory = GetComponent<PlayerInventory>();
         characterAction = GetComponentInChildren<CharacterAction>();
+        mainCamera = Camera.main;
 
         InitPlayerCharacter();
         characterMovement.InitEssentialData();
@@ -75,7 +78,7 @@ public class PlayerCharacter : MonoBehaviour
     {
         if (!PlayerHUD.Inventory.activeSelf && !PlayerHUD.SkillTree.activeSelf && !PlayerHUD.SettingUI.activeSelf)
         {
-            Ray ray = new Ray(transform.position, CameraComponent.transform.forward);
+            Ray ray = new Ray(transform.position, mainCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, 5.0f, ~0, QueryTriggerInteraction.Collide))
             {
                 if (hit.collider.CompareTag("Item"))
@@ -85,6 +88,14 @@ public class PlayerCharacter : MonoBehaviour
                 if (hit.collider.CompareTag("InteractableObj"))
                 {
                     hit.collider.gameObject.GetComponent<LinkingBridge>().StartLink();
+                }
+                if (hit.collider.CompareTag("Cabinet Door"))
+                {
+                    hit.collider.gameObject.GetComponent<LO_Cabinet>().OpenDoor();
+                }
+                if (hit.collider.CompareTag("Puse Quest"))
+                {
+                    hit.collider.gameObject.GetComponent<QuestObjectPuse>().InteractionObject();
                 }
             }
         }
@@ -124,23 +135,53 @@ public class PlayerCharacter : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        inputManager.bIsHit = true;
         currentHealth = Mathf.Clamp(currentHealth - damage, 0.0f, maxHealth);
-
-        if (reactCoroutine == null)
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        if (currentHealth <= 0.0f)
         {
-            reactCoroutine = StartCoroutine(OnReact());
+            inputManager.bIsDead = true;
+            if (reactCoroutine == null)
+            {
+                reactCoroutine = StartCoroutine(OnReact(1.0f));
+                Debug.Log("Death");
+            }
+        }
+        else
+        {
+            inputManager.bIsHit = true;
+            if (reactCoroutine == null)
+            {
+                reactCoroutine = StartCoroutine(OnReact(0.15f));
+                Debug.Log("Hit");
+            }
+        }
+    }
+
+    IEnumerator OnReact(float shakingTime)
+    {
+        float CameraShakingTime = shakingTime;
+        Vector3 CamOriginPos = mainCamera.transform.position;
+        while (CameraShakingTime > 0.0f)
+        {
+            float XAxisValue = Random.Range(-1.0f, 1.1f);
+            float YAxisValue = Random.Range(-1.0f, 1.1f);
+            mainCamera.transform.localPosition = new Vector3(mainCamera.transform.localPosition.x + XAxisValue, mainCamera.transform.localPosition.y + YAxisValue, mainCamera.transform.localPosition.z);
+            CameraShakingTime -= Time.deltaTime;
+            mainCamera.transform.position = CamOriginPos;
+            yield return new WaitForSeconds(0.01f);
         }
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
+        mainCamera.transform.position = CamOriginPos;
 
-    IEnumerator OnReact()
-    {
-        yield return new WaitForSeconds(0.15f);
-        inputManager.bIsHit = false;
+        if (inputManager.bIsDead)
+        {
+            yield return null;
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.15f);
+            inputManager.bIsHit = false;
+        }
         reactCoroutine = null;
     }
-
-    
 }
