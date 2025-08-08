@@ -6,13 +6,9 @@ public class CharacterMovement : MonoBehaviour
     public float maxMoveSpeed = 1.0f;
     public float maxJumpPower = 2.0f;
 
-    [Header("Object Component")]
-    public GameObject CameraObj;
-
-
     // Component
     Camera mainCamera;
-    PCInputManager inputManager;
+    PlayerController inputManager;
     CharacterController characterController;
     CharacterAction characterAction;
 
@@ -24,10 +20,10 @@ public class CharacterMovement : MonoBehaviour
     public Vector3 currentMoveDirection { get; private set; }
     public Vector3 lastInputDirection {  get; private set; }
 
-    public void InitEssentialData()
+    public void InitEssentialData(Camera cam)
     {
-        mainCamera = CameraObj.GetComponent<Camera>();
-        inputManager = GetComponent<PCInputManager>();
+        mainCamera = cam;
+        inputManager = GetComponent<PlayerController>();
         characterController = GetComponent<CharacterController>();
         characterAction = GetComponentInChildren<CharacterAction>();
         lastInputDirection = transform.forward;

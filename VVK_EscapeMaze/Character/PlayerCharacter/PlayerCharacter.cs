@@ -1,20 +1,24 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class PlayerCharacter : MonoBehaviour
 {
-    public HUD PlayerHUD;
-
+    // Components
+    public static PlayerCharacter Instance { get; private set; } // 전역 접근 용
     CharacterMovement characterMovement;
     CharacterAction characterAction;
-    PCInputManager inputManager;
+    CharacterAnimation characterAnimation;
+    PlayerController inputManager;
     PlayerInventory playerInventory;
     Camera mainCamera;
+    HUD PlayerHUD;
 
     Coroutine reactCoroutine = null;
 
+    
 
+
+    // Values
     public float maxHealth { get; private set; } = 100.0f;
     public float currentHealth { get; private set; }
     public int maxSkillPoint { get; private set; } = 13;
@@ -31,16 +35,35 @@ public class PlayerCharacter : MonoBehaviour
     void Awake()
     {
         characterMovement = GetComponent<CharacterMovement>();
-        inputManager = GetComponent<PCInputManager>();
+        inputManager = GetComponent<PlayerController>();
         playerInventory = GetComponent<PlayerInventory>();
-        characterAction = GetComponentInChildren<CharacterAction>();
+        characterAction = GetComponent<CharacterAction>();
+        characterAnimation = GetComponent<CharacterAnimation>();
         mainCamera = Camera.main;
 
         InitPlayerCharacter();
-        characterMovement.InitEssentialData();
+        characterMovement.InitEssentialData(mainCamera);
         characterAction.InitEssentialData();
+        characterAnimation.SetEssentialData(mainCamera);
         playerInventory.InitializeInventory();
         playerInventory.InitializeSkillInventory();
+
+        if (!Instance)
+        {
+            Instance = this;
+        }
+
+        if (PlayerHUD = GameObject.FindGameObjectWithTag("HUD").GetComponent<HUD>())
+        {
+            if (PlayerHUD)
+            {
+                Debug.Log("Find HUD");
+            }
+            else
+            {
+                Debug.Log("Do not Find HUD");
+            }
+        }
     }
 
     void Start()
@@ -167,8 +190,7 @@ public class PlayerCharacter : MonoBehaviour
             float YAxisValue = Random.Range(-1.0f, 1.1f);
             mainCamera.transform.localPosition = new Vector3(mainCamera.transform.localPosition.x + XAxisValue, mainCamera.transform.localPosition.y + YAxisValue, mainCamera.transform.localPosition.z);
             CameraShakingTime -= Time.deltaTime;
-            mainCamera.transform.position = CamOriginPos;
-            yield return new WaitForSeconds(0.01f);
+            yield return null;
         }
 
         mainCamera.transform.position = CamOriginPos;

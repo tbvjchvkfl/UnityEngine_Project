@@ -8,6 +8,8 @@ public class PlayerInventory : MonoBehaviour
     public int InventorySize { get; private set; }
     public List<PickUpItem> ItemList { get; private set; }
 
+    public SkillNode[] SkillList { get; private set; }
+
     // Delegate for Refreshing Inventory
     public delegate void RefreshInventoryDelegate();
     public event RefreshInventoryDelegate OnRefreshInventory;
@@ -17,14 +19,12 @@ public class PlayerInventory : MonoBehaviour
     public delegate void EquipGearDelegate(PickUpItem gearItem);
     public event EquipGearDelegate OnEquipGearEvent;
 
+    public delegate void OnEquipSkillDelegate(SkillNode skillNode, int slotNum);
+    public event OnEquipSkillDelegate OnEquipSkillEvent;
+
     PickupItemPool itemPool;
 
-    void Awake()
-    {
-        InitializeInventory();
-    }
-
-    void InitializeInventory()
+    public void InitializeInventory()
     {
         InventorySize = 10;
         ItemList = new List<PickUpItem>();
@@ -32,6 +32,20 @@ public class PlayerInventory : MonoBehaviour
         {
             itemPool = PoolObject.GetComponent<PickupItemPool>();
         }
+    }
+
+    public void InitializeSkillInventory()
+    {
+        SkillList = new SkillNode[2];
+        for (int i = 0; i < SkillList.Length; i++)
+        {
+            SkillList[i] = null;
+        }
+    }
+
+    public void EquipSkill(SkillNode node, int num)
+    {
+        OnEquipSkillEvent?.Invoke(node, num);
     }
 
     public void AddItem(PickUpItem NewItem)

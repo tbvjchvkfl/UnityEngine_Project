@@ -4,18 +4,16 @@ using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
 {
-    [Header("Object Component")]
-    public Camera mainCamera;
-
     public GameObject head_Bone;
     public GameObject spine_Bone;
-
     public BoxCollider SkillRangeBox;
 
-    PCInputManager inputManager;
+    PlayerController inputManager;
     CharacterMovement characterMovement;
     CharacterAction characterAction;
     Animator animationController;
+    Camera mainCamera;
+
     Coroutine SkillCoroutine;
 
     public float leaningAngle {  get; private set; }
@@ -23,22 +21,18 @@ public class CharacterAnimation : MonoBehaviour
     public float AimStateIndex {  get; private set; }
     public float SpeedValue { get; private set; }
 
-    void Awake()
-    {
-        SetEssentialData();
-    }
-
     void Update()
     {
         SetMovementData();
     }
 
-    void SetEssentialData()
+    public void SetEssentialData(Camera cam)
     {
-        inputManager = GetComponentInParent<PCInputManager>();
+        inputManager = GetComponentInParent<PlayerController>();
         characterMovement = GetComponentInParent<CharacterMovement>();
         characterAction = GetComponentInParent<CharacterAction>();
         animationController = GetComponent<Animator>();
+        mainCamera = cam;
 
         leaningAngle = 0.0f;
         MoveStateIndex = 0.0f;
@@ -207,9 +201,9 @@ public class CharacterAnimation : MonoBehaviour
 
     IEnumerator SkillActivate()
     {
-        while (characterAction.bIsSkillActivate)
+        while (characterAction.bIsSkillActivate && !inputManager.bIsHit && !inputManager.bIsDead)
         {
-            Collider[] HitList = Physics.OverlapBox(SkillRangeBox.bounds.center, SkillRangeBox.bounds.extents / 2, Quaternion.identity, ~0);
+            Collider[] HitList = Physics.OverlapBox(SkillRangeBox.bounds.center, SkillRangeBox.bounds.extents, Quaternion.identity, ~0);
             foreach (Collider hit in HitList)
             {
                 if (hit.gameObject.CompareTag("Enemy"))
@@ -223,6 +217,11 @@ public class CharacterAnimation : MonoBehaviour
                 }
             }
             yield return null;
+        }
+        if (inputManager.bIsHit || inputManager.bIsDead)
+        {
+            SkillCoroutine = null;
+            characterAction.bIsSkillActivate = false;
         }
     }
 

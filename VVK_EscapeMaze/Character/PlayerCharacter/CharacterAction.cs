@@ -75,7 +75,7 @@ public class CharacterAction : MonoBehaviour
     public BulletPool bulletPool { get; private set; }
 
     // Component
-    PCInputManager inputManager;
+    PlayerController inputManager;
     CharacterAnimation characterAnimation;
     CharacterMovement characterMovement;
     PlayerInventory playerInventory;
@@ -102,11 +102,10 @@ public class CharacterAction : MonoBehaviour
 
     public void InitEssentialData()
     {
-        inputManager = GetComponentInParent<PCInputManager>();
+        inputManager = GetComponentInParent<PlayerController>();
         characterMovement = GetComponentInParent<CharacterMovement>();
         playerInventory = GetComponentInParent<PlayerInventory>();
         characterAnimation = GetComponent<CharacterAnimation>();
-
         bulletPool = new BulletPool();
         bulletPool.InitBulletPool(PistolBullet);
 
@@ -182,7 +181,9 @@ public class CharacterAction : MonoBehaviour
 
     public void ShowMuzzleFlashInAnim()
     {
-
+        GameObject MuzzleFlashEffect = Instantiate(MuzzleFlash, PistolMuzzle.transform.position, PistolMuzzle.transform.rotation);
+        MuzzleFlashEffect.transform.SetParent(PistolMuzzle.transform);
+        Destroy(MuzzleFlashEffect, 0.5f);
     }
 
     void SpecialSkill()
