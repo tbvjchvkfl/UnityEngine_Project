@@ -3,9 +3,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    public Vector2 inputDirection {  get; private set; }
-    public Vector2 lookDirection { get; private set; }
-
+    public Vector2 inputDirection { get; private set; } = Vector2.zero;
+    public Vector2 lookDirection { get; private set; } = Vector2.zero;
     public bool bIsStep { get; set; } = false;
     public bool bIsDodge {  get; set; } = false;
     public bool bIsSprint {  get; set; } = false;
@@ -59,7 +58,10 @@ public class PlayerController : MonoBehaviour
 
     public void OnLook(InputValue inputValue)
     {
-        lookDirection = inputValue.Get<Vector2>();
+        if (!bIsHit && !bIsDead && !bIsInventory)
+        {
+            lookDirection = inputValue.Get<Vector2>();
+        }
     }
 
     public void OnSprint(InputValue inputValue)
