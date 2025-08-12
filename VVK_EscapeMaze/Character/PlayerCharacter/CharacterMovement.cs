@@ -1,29 +1,30 @@
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class CharacterMovement : MonoBehaviour
 {
     [Header("Locomotion")]
-    public float maxMoveSpeed = 1.0f;
-    public float maxJumpPower = 2.0f;
+    public float MaxMoveSpeed = 1.0f;
 
     // Component
     Camera mainCamera;
-    PlayerController inputManager;
     CharacterController characterController;
+
+    PlayerController playerController;
     CharacterAction characterAction;
 
     // Move State Value
-    public float moveSpeed { get; private set; }
-    public float characterRotationRate {  get; private set; }
+    public float moveSpeed { get; private set; } = 0.0f;
+    public float characterRotationRate { get; private set; } = 0.0f;
     public float GravityAcceleration { get; private set; } = 0.0f;
-
-    public Vector3 currentMoveDirection { get; private set; }
-    public Vector3 lastInputDirection {  get; private set; }
+    
+    public Vector3 currentMoveDirection { get; private set; } = Vector3.zero;
+    public Vector3 lastInputDirection {  get; private set; } = Vector3.zero;
 
     public void InitEssentialData(Camera cam)
     {
         mainCamera = cam;
-        inputManager = GetComponent<PlayerController>();
+        playerController = GetComponent<PlayerController>();
         characterController = GetComponent<CharacterController>();
         characterAction = GetComponentInChildren<CharacterAction>();
         lastInputDirection = transform.forward;
@@ -31,7 +32,7 @@ public class CharacterMovement : MonoBehaviour
 
     void SetMoveDirection()
     {
-        if (!inputManager.bIsInventory)
+        if (!playerController.bIsInventory)
         {
             Vector3 CameraForwardVector = mainCamera.transform.forward;
             CameraForwardVector.y = 0.0f;
@@ -41,7 +42,7 @@ public class CharacterMovement : MonoBehaviour
             CameraRightVector.y = 0.0f;
             CameraRightVector.Normalize();
 
-            Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
+            Vector3 desiredMoveDirection = (CameraForwardVector * playerController.inputDirection.y + CameraRightVector * playerController.inputDirection.x).normalized;
 
             if (desiredMoveDirection.magnitude > 0.1f)
             {
@@ -59,11 +60,11 @@ public class CharacterMovement : MonoBehaviour
 
     void SetRotateDirection(Vector3 moveDirection)
     {
-        if (!inputManager.bIsInventory)
+        if (!playerController.bIsInventory)
         {
             Quaternion toRotation = Quaternion.identity;
 
-            if (inputManager.bIsEquip || inputManager.bIsAim)
+            if (playerController.bIsEquip || playerController.bIsAim)
             {
                 toRotation = Quaternion.LookRotation(mainCamera.transform.forward);
             }
@@ -118,16 +119,69 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
-    public void Move()
+    public void Move(Vector2 moveDirection)
     {
-        if (!characterAction.bIsSkillActivate && !inputManager.bIsStep && !inputManager.bIsDodge)
+
+        if (!characterAction.bIsSkillActivate && !playerController.bIsStep && !playerController.bIsDodge)
         {
             SetMoveDirection();
 
-            Vector3 DesiredDirection = currentMoveDirection * moveSpeed * maxMoveSpeed;
+            Vector3 DesiredDirection = currentMoveDirection * moveSpeed * MaxMoveSpeed;
             DesiredDirection.y = SetGravity();
 
             characterController.Move(DesiredDirection * Time.fixedDeltaTime);
         }
+        /*if (!characterAction.bIsSkillActivate && !playerController.bIsStep && !playerController.bIsDodge)
+        {
+            if (!playerController.bIsInventory)
+            {
+                Vector3 CameraForwardVector = mainCamera.transform.forward;
+                CameraForwardVector.y = 0.0f;
+                CameraForwardVector.Normalize();
+
+                Vector3 CameraRightVector = mainCamera.transform.right;
+                CameraRightVector.y = 0.0f;
+                CameraRightVector.Normalize();
+
+                movementDirection = new Vector3(moveDirection.x, 0.0f, mainCamera.transform.forward * moveDirection.y).normalized * moveSpeed * MaxMoveSpeed;
+                if(movementDirection.magnitude > 0.1f)
+                {
+                    lastInputDirection = movementDirection;
+                    currentMoveDirection = movementDirection;
+                }
+                else
+                {
+                    currentMoveDirection = Vector3.zero;
+                }
+            }
+            movementDirection.y = SetGravity();
+            characterController.Move(movementDirection * Time.fixedDeltaTime);
+        }*/
     }
+
+    /*public void Look(Vector2 mouseDelta)
+    {
+        if (CinemachineCamera && cinemachinPanTilt)
+        {
+            cinemachinPanTilt.PanAxis.Value += mouseDelta.x * CharacterRotationSpeedForLook;
+            cinemachinPanTilt.TiltAxis.Value += mouseDelta.y * CharacterRotationSpeedForLook;
+
+            cinemachinPanTilt.TiltAxis.Value = Mathf.Clamp(cinemachinPanTilt.TiltAxis.Value, -35.0f, 35.0f);
+
+            characterLookDirection = new Vector3(cinemachinPanTilt.TiltAxis.Value, cinemachinPanTilt.PanAxis.Value, 0.0f);
+
+            //mainCamera.transform.rotation = Quaternion.Euler(characterLookDirection.x, 0.0f, 0.0f);
+            transform.rotation = Quaternion.Euler(0.0f, characterLookDirection.y, 0.0f);
+
+            Ray ray = mainCamera.GetComponent<Camera>().ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0.0f));
+            if (Physics.Raycast(ray, out RaycastHit hit, 200.0f, LayerMask.GetMask("Default")))
+            {
+                AimTarget.transform.position = hit.point;
+            }
+            else
+            {
+                AimTarget.transform.position = ray.GetPoint(100.0f);
+            }
+        }
+    }*/
 }

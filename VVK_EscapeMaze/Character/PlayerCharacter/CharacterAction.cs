@@ -75,7 +75,7 @@ public class CharacterAction : MonoBehaviour
     public BulletPool bulletPool { get; private set; }
 
     // Component
-    PlayerController inputManager;
+    PlayerController playerController;
     CharacterAnimation characterAnimation;
     CharacterMovement characterMovement;
     PlayerInventory playerInventory;
@@ -102,7 +102,7 @@ public class CharacterAction : MonoBehaviour
 
     public void InitEssentialData()
     {
-        inputManager = GetComponentInParent<PlayerController>();
+        playerController = GetComponentInParent<PlayerController>();
         characterMovement = GetComponentInParent<CharacterMovement>();
         playerInventory = GetComponentInParent<PlayerInventory>();
         characterAnimation = GetComponent<CharacterAnimation>();
@@ -110,9 +110,9 @@ public class CharacterAction : MonoBehaviour
         bulletPool.InitBulletPool(PistolBullet);
 
         playerInventory.OnEquipSkillEvent += EquipSkill;
-        inputManager.OnNormalAttackEvent += ShootPistol;
-        inputManager.OnSpecialSkillEvent += SpecialSkill;
-        inputManager.OnDodgeEvent += Dodge;
+        playerController.OnNormalAttackEvent += ShootPistol;
+        playerController.OnSpecialSkillEvent += SpecialSkill;
+        playerController.OnDodgeEvent += Dodge;
 
         bIsDataReady = true;
     }
@@ -127,7 +127,7 @@ public class CharacterAction : MonoBehaviour
 
     void AttachPistolMesh()
     {
-        if (inputManager.bIsAim)
+        if (playerController.bIsAim)
         {
             PistolGun.SetActive(true);
         }
@@ -141,11 +141,11 @@ public class CharacterAction : MonoBehaviour
     {
         if (!bIsSkillActivate)
         {
-            if (!inputManager.bIsAim && !inputManager.bIsSkillReady)
+            if (!playerController.bIsAim && !playerController.bIsSkillReady)
             {
                 Debug.Log("Standing Action");
             }
-            else if (!inputManager.bIsAim && inputManager.bIsSkillReady && SkillList[0])
+            else if (!playerController.bIsAim && playerController.bIsSkillReady && SkillList[0])
             {
                 Debug.Log("Normal Skill Activated");
                 SkillIndex = SkillList[0].SkillData.SkillIndex;
@@ -156,7 +156,7 @@ public class CharacterAction : MonoBehaviour
 
     public void BeginShootBulletInAnim()
     {
-        if (inputManager.bIsAim && !bIsAimFireCoolDown)
+        if (playerController.bIsAim && !bIsAimFireCoolDown)
         {
             GameObject bullet = bulletPool.UseBulletPool();
             if (bullet)
@@ -188,7 +188,7 @@ public class CharacterAction : MonoBehaviour
 
     void SpecialSkill()
     {
-        if(inputManager.bIsSkillReady && SkillList[1] && !bIsSkillActivate)
+        if(playerController.bIsSkillReady && SkillList[1] && !bIsSkillActivate)
         {
             Debug.Log("Special Skill Activated");
             SkillIndex = SkillList[1].SkillData.SkillIndex;
@@ -216,24 +216,24 @@ public class CharacterAction : MonoBehaviour
 
     IEnumerator DodgetoStanding()
     {
-        characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 0.5f);
+        characterMovement.StepAndDodgeMovement(playerController.inputDirection, 0.5f);
         yield return new WaitForSeconds(0.3f);
 
-        if (inputManager.bIsDodge)
+        if (playerController.bIsDodge)
         {
-            characterMovement.StepAndDodgeMovement(inputManager.inputDirection, 1.0f);
+            characterMovement.StepAndDodgeMovement(playerController.inputDirection, 1.0f);
             yield return new WaitForSeconds(0.5f);
         }
 
-        inputManager.bIsStep = false;
-        inputManager.bIsDodge = false;
+        playerController.bIsStep = false;
+        playerController.bIsDodge = false;
         StopCoroutine(DodgeCoroutine);
         DodgeCoroutine = null;
     }
 
     private void OnDestroy()
     {
-        inputManager.OnNormalAttackEvent -= ShootPistol;
-        inputManager.OnDodgeEvent -= Dodge;
+        playerController.OnNormalAttackEvent -= ShootPistol;
+        playerController.OnDodgeEvent -= Dodge;
     }
 }

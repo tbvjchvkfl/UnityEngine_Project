@@ -8,7 +8,7 @@ public class PlayerCharacter : MonoBehaviour
     CharacterMovement characterMovement;
     CharacterAction characterAction;
     CharacterAnimation characterAnimation;
-    PlayerController inputManager;
+    PlayerController characterController;
     PlayerInventory playerInventory;
     Camera mainCamera;
     HUD PlayerHUD;
@@ -35,7 +35,7 @@ public class PlayerCharacter : MonoBehaviour
     void Awake()
     {
         characterMovement = GetComponent<CharacterMovement>();
-        inputManager = GetComponent<PlayerController>();
+        characterController = GetComponent<PlayerController>();
         playerInventory = GetComponent<PlayerInventory>();
         characterAction = GetComponent<CharacterAction>();
         characterAnimation = GetComponent<CharacterAnimation>();
@@ -68,8 +68,8 @@ public class PlayerCharacter : MonoBehaviour
 
     void Start()
     {
-        inputManager.OnInteractionEvent += Interaction;
-        inputManager.OnInventoryEvent += ShowInventory;
+        characterController.OnInteractionEvent += Interaction;
+        characterController.OnInventoryEvent += ShowInventory;
     }
 
     void Update()
@@ -88,7 +88,8 @@ public class PlayerCharacter : MonoBehaviour
 
     void FixedUpdate()
     {
-        characterMovement.Move();
+        characterMovement.Move(characterController.inputDirection);
+        //characterMovement.Look(characterController.lookDirection);
     }
 
     void InitPlayerCharacter()
@@ -162,7 +163,7 @@ public class PlayerCharacter : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         if (currentHealth <= 0.0f)
         {
-            inputManager.bIsDead = true;
+            characterController.bIsDead = true;
             if (reactCoroutine == null)
             {
                 reactCoroutine = StartCoroutine(OnReact(1.0f));
@@ -171,7 +172,8 @@ public class PlayerCharacter : MonoBehaviour
         }
         else
         {
-            inputManager.bIsHit = true;
+            characterController.bIsHit = true;
+
             if (reactCoroutine == null)
             {
                 reactCoroutine = StartCoroutine(OnReact(0.15f));
@@ -195,14 +197,14 @@ public class PlayerCharacter : MonoBehaviour
 
         mainCamera.transform.position = CamOriginPos;
 
-        if (inputManager.bIsDead)
+        if (characterController.bIsDead)
         {
             yield return null;
         }
         else
         {
             yield return new WaitForSeconds(0.15f);
-            inputManager.bIsHit = false;
+            characterController.bIsHit = false;
         }
         reactCoroutine = null;
     }

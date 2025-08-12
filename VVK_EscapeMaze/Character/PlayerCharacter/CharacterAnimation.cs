@@ -4,11 +4,9 @@ using UnityEngine;
 
 public class CharacterAnimation : MonoBehaviour
 {
-    public GameObject head_Bone;
-    public GameObject spine_Bone;
     public BoxCollider SkillRangeBox;
 
-    PlayerController inputManager;
+    PlayerController playerController;
     CharacterMovement characterMovement;
     CharacterAction characterAction;
     Animator animationController;
@@ -20,19 +18,24 @@ public class CharacterAnimation : MonoBehaviour
     public float MoveStateIndex {  get; private set; }
     public float AimStateIndex {  get; private set; }
     public float SpeedValue { get; private set; }
+    bool bIsInitSuccess = false;
 
     void Update()
     {
-        SetMovementData();
+        if (bIsInitSuccess)
+        {
+            SetMovementData();
+        }
     }
 
     public void SetEssentialData(Camera cam)
     {
-        inputManager = GetComponentInParent<PlayerController>();
-        characterMovement = GetComponentInParent<CharacterMovement>();
-        characterAction = GetComponentInParent<CharacterAction>();
+        playerController = GetComponent<PlayerController>();
+        characterMovement = GetComponent<CharacterMovement>();
+        characterAction = GetComponent<CharacterAction>();
         animationController = GetComponent<Animator>();
         mainCamera = cam;
+        bIsInitSuccess = true;
 
         leaningAngle = 0.0f;
         MoveStateIndex = 0.0f;
@@ -41,14 +44,14 @@ public class CharacterAnimation : MonoBehaviour
 
     void SetMovementData()
     {
-        animationController.SetBool("Step", inputManager.bIsStep);
-        animationController.SetBool("Dodge", inputManager.bIsDodge);
-        animationController.SetBool("Move", inputManager.inputDirection.magnitude > 0.1f);
-        animationController.SetBool("Aim", inputManager.bIsAim);
-        animationController.SetBool("Attack", inputManager.bIsNormalAttack);
-        animationController.SetBool("Hit", inputManager.bIsHit);
-        animationController.SetBool("Equip", inputManager.bIsEquip);
-        animationController.SetBool("Skill Ready", inputManager.bIsSkillReady);
+        animationController.SetBool("Step", playerController.bIsStep);
+        animationController.SetBool("Dodge", playerController.bIsDodge);
+        animationController.SetBool("Move", playerController.inputDirection.magnitude > 0.1f);
+        animationController.SetBool("Aim", playerController.bIsAim);
+        animationController.SetBool("Attack", playerController.bIsNormalAttack);
+        animationController.SetBool("Hit", playerController.bIsHit);
+        animationController.SetBool("Equip", playerController.bIsEquip);
+        animationController.SetBool("Skill Ready", playerController.bIsSkillReady);
         animationController.SetBool("Skill Activate", characterAction.bIsSkillActivate);
         animationController.SetFloat("Skill Index", characterAction.SkillIndex);
 
@@ -56,35 +59,7 @@ public class CharacterAnimation : MonoBehaviour
         animationController.SetFloat("Aim State Index", SetAimStateIndex());
 
         characterMovement.SetRotationRate(animationController.GetFloat("Rotation Value For Script"));
-        characterMovement.SetMoveSpeed(SetMoveSpeedValue());
-    }
-
-    float SetMoveSpeedValue()
-    {
-        if (inputManager.bIsEquip)
-        {
-            if(inputManager.inputDirection.magnitude > 0.1f)
-            {
-                if (MoveStateIndex < 1.0f)
-                {
-                    SpeedValue = 2.0f;
-                }
-                else
-                {
-                    SpeedValue = 5.0f;
-                }
-            }
-            else
-            {
-                SpeedValue = 0.0f;
-            }
-        }
-        else
-        {
-            SpeedValue = animationController.GetFloat("MoveSpeed For Script");
-        }
-
-        return SpeedValue;
+        characterMovement.SetMoveSpeed(animationController.GetFloat("MoveSpeed For Script"));
     }
 
     float SetMoveStateIndex()
@@ -92,7 +67,7 @@ public class CharacterAnimation : MonoBehaviour
         float WalkTarget = 0.0f;
         float RunTarget = 1.0f;
         
-        MoveStateIndex = inputManager.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime * 2.5f) : Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime * 2.5f);
+        MoveStateIndex = playerController.bIsSprint ? Mathf.MoveTowards(MoveStateIndex, RunTarget, Time.deltaTime * 2.5f) : Mathf.MoveTowards(MoveStateIndex, WalkTarget, Time.deltaTime * 2.5f);
         return MoveStateIndex;
     }
 
@@ -102,7 +77,7 @@ public class CharacterAnimation : MonoBehaviour
         float NormalTarget = 0.0f;
 
         float ReturnTarget = 0.0f;
-        if (inputManager.bIsAim)
+        if (playerController.bIsAim)
         {
             ReturnTarget = AimTarget;
             float LayerWeight = Mathf.MoveTowards(animationController.GetLayerWeight(1), 1.0f, Time.deltaTime * 5.0f);
@@ -129,13 +104,12 @@ public class CharacterAnimation : MonoBehaviour
         CameraRightVector.y = 0.0f;
         CameraRightVector.Normalize();
 
-        Vector3 desiredMoveDirection = (CameraForwardVector * inputManager.inputDirection.y + CameraRightVector * inputManager.inputDirection.x).normalized;
+        Vector3 desiredMoveDirection = (CameraForwardVector * playerController.inputDirection.y + CameraRightVector * playerController.inputDirection.x).normalized;
 
         float moveAngle = Vector3.SignedAngle(transform.forward, desiredMoveDirection, Vector3.up);
 
         if (Mathf.Abs(moveAngle - 180.0f) < 1.0f)
             moveAngle = -180.0f;
-
         return moveAngle;
     }
 
@@ -201,7 +175,7 @@ public class CharacterAnimation : MonoBehaviour
 
     IEnumerator SkillActivate()
     {
-        while (characterAction.bIsSkillActivate && !inputManager.bIsHit && !inputManager.bIsDead)
+        while (characterAction.bIsSkillActivate && !playerController.bIsHit && !playerController.bIsDead)
         {
             Collider[] HitList = Physics.OverlapBox(SkillRangeBox.bounds.center, SkillRangeBox.bounds.extents, Quaternion.identity, ~0);
             foreach (Collider hit in HitList)
@@ -218,7 +192,7 @@ public class CharacterAnimation : MonoBehaviour
             }
             yield return null;
         }
-        if (inputManager.bIsHit || inputManager.bIsDead)
+        if (playerController.bIsHit || playerController.bIsDead)
         {
             SkillCoroutine = null;
             characterAction.bIsSkillActivate = false;
