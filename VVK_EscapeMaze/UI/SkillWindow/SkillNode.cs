@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -11,21 +12,25 @@ public class SkillNode : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
     public SkillBase SkillData;
     public GameObject VisibiltiyObject;
 
+    public SkillBase skillInfo { get; private set; }
+    public List<int> NextSkillNodeIndexList = new List<int>();
+
     CanvasGroup canvasGroup;
-
     PlayerCharacter playerCharacter;
-    public SkillBase skillInfo {  get; private set; }
+    SkillTree skillTree;
     GameObject visibilityObj;
-
     Coroutine SliderCoroutine;
 
     bool bIsButtonPushed = false;
-    
+    bool bIsEnabledNextSkillLearn = false;
+    int skillNodeIndex = 0;
 
-    public void InitNodeData(GameObject player)
+    public void InitNodeData(GameObject player, SkillTree tree, int nodeIndex)
     {
         canvasGroup = GetComponent<CanvasGroup>();
         SliderCoroutine = null;
+        skillTree = tree;
+        skillNodeIndex = nodeIndex;
 
         if (player)
         {
@@ -45,23 +50,20 @@ public class SkillNode : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         }
     }
 
-    /*void CopySkillData(SkillBase Data)
-    {
-        if (Data)
-        {
-            skillInfo = Data.CopyData();
-        }
-    }*/
-
     public void OnPointerDown(PointerEventData eventData)
     {
         if (playerCharacter.technicalPoint >= skillInfo.NeedTechnicalPoint)
         {
-            bIsButtonPushed = true;
-            NeedTechnicalPointText.color = Color.clear;
-            if (SliderCoroutine == null)
+            if (skillNodeIndex == 0)
             {
-                SliderCoroutine = StartCoroutine(OnIncreaseSkillCover());
+                PressedSkillButton();
+            }
+            else
+            {
+                if (bIsEnabledNextSkillLearn)
+                {
+                    PressedSkillButton();
+                }
             }
         }
     }
@@ -116,6 +118,16 @@ public class SkillNode : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
         }
     }
 
+    void PressedSkillButton()
+    {
+        bIsButtonPushed = true;
+        NeedTechnicalPointText.color = Color.clear;
+        if (SliderCoroutine == null)
+        {
+            SliderCoroutine = StartCoroutine(OnIncreaseSkillCover());
+        }
+    }
+
     IEnumerator OnIncreaseSkillCover()
     {
         while (!skillInfo.bIsActivity)
@@ -128,6 +140,10 @@ public class SkillNode : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
                     ActiveGuage.fillAmount = 0.0f;
                     ActiveGuage.enabled = false;
                     skillInfo.bIsActivity = true;
+                    foreach (int index in NextSkillNodeIndexList)
+                    {
+                        skillTree.SkillNodeList[index].GetComponent<SkillNode>().bIsEnabledNextSkillLearn = true;
+                    }
                     GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
                     SkillIcon.color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
                     playerCharacter.ApplyCharacterStat(skillInfo.NeedTechnicalPoint, skillInfo.IncreaseAttackRate, skillInfo.IncreaseArmorRate, skillInfo.IncreaseAimRate);

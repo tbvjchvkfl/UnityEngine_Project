@@ -48,9 +48,12 @@ public class SkillTree : MonoBehaviour
             rightClickSkill = SkillSlotList[1].GetComponent<SkillSlot>();
             rightClickSkill.InitializeSkillSlot(owner, 1);
 
-            foreach (GameObject skillNode in SkillNodeList)
+            for(int i = 0; i< SkillNodeList.Length; i++)
             {
-                skillNode.GetComponent<SkillNode>().InitNodeData(owner);
+                if (SkillNodeList[i])
+                {
+                    SkillNodeList[i].GetComponent<SkillNode>().InitNodeData(owner, this, i);
+                }
             }
         }
     }
